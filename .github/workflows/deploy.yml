@@ -1,0 +1,61 @@
+name: deliberate-aws-deployment
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [plan, apply]
+        default: plan
+        description: Plan only unless deliberately applying billable infrastructure
+      state_bucket:
+        type: string
+        required: true
+        description: Existing private encrypted versioned state bucket in selected region
+      region:
+        type: string
+        default: eu-west-1
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: commerce-aws-deployment
+  cancel-in-progress: false
+jobs:
+  infrastructure:
+    runs-on: ubuntu-latest
+    environment: portfolio-aws
+    env:
+      TF_VAR_aws_region: ${{ inputs.region }}
+      TF_IN_AUTOMATION: 'true'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - uses: opentofu/setup-opentofu@9d84900f3238fab8cd84ce47d658d25dd008be2f # v1
+        with:
+          tofu_version: '1.13.1'
+      - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ inputs.region }}
+      - run: python scripts/package_lambda.py
+      - name: Configure persistent state
+        env:
+          STATE_BUCKET: ${{ inputs.state_bucket }}
+          STATE_REGION: ${{ inputs.region }}
+        run: |
+          cat > infra/backend.tf <<'BACKEND'
+          terraform { backend "s3" {} }
+          BACKEND
+          tofu -chdir=infra init -input=false \
+            -backend-config="bucket=$STATE_BUCKET" \
+            -backend-config="key=commerce-platform/dev.tfstate" \
+            -backend-config="region=$STATE_REGION" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+      - run: tofu -chdir=infra validate
+      - run: tofu -chdir=infra plan -input=false -out=deployment.tfplan
+      - if: inputs.operation == 'apply'
+        run: tofu -chdir=infra apply -input=false deployment.tfplan

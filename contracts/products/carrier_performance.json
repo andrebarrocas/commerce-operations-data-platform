@@ -1,0 +1,213 @@
+{
+  "name": "carrier_performance",
+  "business_description": "Daily carrier delivery outcomes and dispatch volume by destination country, with explicit denominators.",
+  "owner": {
+    "team": "Fictional Commerce Data Platform",
+    "contact": "repository:CODEOWNERS"
+  },
+  "contract_version": "1.0.0",
+  "status": "local_verified",
+  "layer": "gold",
+  "grain": "One row per carrier_id, destination country and UTC metric_date containing a dispatch, attempt, or delivery.",
+  "primary_key": [
+    "carrier_id",
+    "country",
+    "metric_date"
+  ],
+  "columns": [
+    {
+      "name": "carrier_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Carrier key."
+    },
+    {
+      "name": "country",
+      "type": "string",
+      "nullable": false,
+      "description": "Destination country."
+    },
+    {
+      "name": "metric_date",
+      "type": "date",
+      "nullable": false,
+      "description": "UTC event date for each measure; dispatch and delivery cohorts differ."
+    },
+    {
+      "name": "dispatched_shipments",
+      "type": "int64",
+      "nullable": false,
+      "description": "Shipments dispatched on metric_date."
+    },
+    {
+      "name": "delivery_attempts",
+      "type": "int64",
+      "nullable": false,
+      "description": "Distinct attempts started on metric_date."
+    },
+    {
+      "name": "failed_delivery_attempts",
+      "type": "int64",
+      "nullable": false,
+      "description": "Failed attempts whose outcome occurred on metric_date; denominator for failure rate must use matching completed-attempt cohort."
+    },
+    {
+      "name": "completed_delivery_attempts",
+      "type": "int64",
+      "nullable": false,
+      "description": "Failed or delivered attempts whose outcome occurred on metric_date."
+    },
+    {
+      "name": "delivered_shipments",
+      "type": "int64",
+      "nullable": false,
+      "description": "Shipments delivered on metric_date."
+    },
+    {
+      "name": "on_time_deliveries",
+      "type": "int64",
+      "nullable": false,
+      "description": "Delivered shipments on or before original promise."
+    },
+    {
+      "name": "late_deliveries",
+      "type": "int64",
+      "nullable": false,
+      "description": "Delivered shipments after original promise."
+    },
+    {
+      "name": "on_time_delivery_rate",
+      "type": "float64",
+      "nullable": true,
+      "description": "on_time_deliveries / delivered_shipments; null for zero denominator."
+    },
+    {
+      "name": "avg_transit_seconds",
+      "type": "float64",
+      "nullable": true,
+      "description": "Mean dispatch-to-delivery for delivered cohort."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Deterministic snapshot cutoff (as_of); actual publication wall time is stored in the release manifest."
+    }
+  ],
+  "freshness_sla": {
+    "max_lag_seconds": 3600,
+    "measurement": "Time from Kinesis arrival (or local simulated ingress) of newest eligible accepted input to successful publication of a snapshot that includes it. Also alert if scheduled publication heartbeat is overdue. Do not infer freshness from an unchanged business timestamp.",
+    "objective_ratio": 0.99,
+    "evaluation_window": "rolling_30_days",
+    "enforcement": "target_unmeasured"
+  },
+  "completeness_sla": {
+    "minimum_ratio": 0.999,
+    "allowed_lateness_seconds": 172800,
+    "denominator": "Union of carrier_id, destination country and UTC date keys from effective dispatch, out-for-delivery and delivery outcome events.",
+    "measurement": "Accepted-population product coverage only: matched expected keys / expected keys at committed input high-water mark. Independent source completeness requires generator expected-ID manifest; unknown without source control totals. Empty denominator is not_applicable. Report rejected, orphaned, and pending records separately.",
+    "enforcement": "target_unmeasured"
+  },
+  "quality_rules": [
+    {
+      "id": "required_key",
+      "type": "not_null",
+      "columns": [
+        "carrier_id",
+        "country",
+        "metric_date"
+      ],
+      "parameters": {},
+      "description": "Every row has a complete business key.",
+      "severity": "error"
+    },
+    {
+      "id": "unique_grain",
+      "type": "unique",
+      "columns": [
+        "carrier_id",
+        "country",
+        "metric_date"
+      ],
+      "parameters": {},
+      "description": "Published snapshot has one row per declared grain.",
+      "severity": "error"
+    },
+    {
+      "id": "publish_clock_sanity",
+      "type": "timestamp_sanity",
+      "columns": [
+        "updated_at"
+      ],
+      "parameters": {
+        "reference_column": null,
+        "max_future_seconds": 300
+      },
+      "description": "Publication clock is not more than five minutes ahead of evaluation time.",
+      "severity": "error"
+    },
+    {
+      "id": "population_completeness",
+      "type": "completeness",
+      "columns": [
+        "carrier_id",
+        "country",
+        "metric_date"
+      ],
+      "parameters": {
+        "minimum_ratio": 0.999,
+        "expected_population": "Union of carrier_id, destination country and UTC date keys from effective dispatch, out-for-delivery and delivery outcome events."
+      },
+      "description": "Compare expected and published keys using the same committed input snapshot after the lateness allowance.",
+      "severity": "error"
+    },
+    {
+      "id": "on_time_rate_bounds",
+      "type": "numeric_range",
+      "columns": [
+        "on_time_delivery_rate"
+      ],
+      "parameters": {
+        "minimum": 0,
+        "maximum": 1
+      },
+      "description": "Rates use only matching delivered cohorts.",
+      "severity": "error"
+    }
+  ],
+  "lineage": {
+    "sources": [
+      "shipment_lifecycle",
+      "silver.events"
+    ],
+    "transformation": "Build distinct per-event-date cohorts, aggregate each, then full-outer join carrier/country/date keys. Use sums of numerators and denominators for multi-day rates.",
+    "downstream_consumers": [
+      "Carrier service analysis",
+      "carrier_delay_rate_30d feature",
+      "recent_failed_delivery_rate feature"
+    ]
+  },
+  "usage_metadata": {
+    "intended_uses": [
+      "Carrier service analysis",
+      "carrier_delay_rate_30d feature",
+      "recent_failed_delivery_rate feature"
+    ],
+    "prohibited_uses": [
+      "Representing real customers, company operations, or measured production adoption",
+      "Financial settlement or physical stock reconciliation"
+    ],
+    "classification": "synthetic_public",
+    "access_pattern": "Partition-pruned Parquet snapshots; Redshift serving projection where justified.",
+    "retention_days": 90
+  },
+  "cost_metadata": {
+    "measurement_status": "not_measured",
+    "period_start": null,
+    "period_end": null,
+    "currency": "USD",
+    "compute_usd": null,
+    "storage_bytes": null,
+    "allocation_method": "Storage by measured object bytes; shared job compute allocated by measured input bytes, explicitly an estimate. Report unallocated shared and AWS service charges separately."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "engine": "Apache Spark",
+  "spark_version": "3.5.7",
+  "input_records": 71568,
+  "output_rows": {
+    "fact_order_line": 9999,
+    "shipment_summary": 5500,
+    "facility_hour": 228
+  },
+  "runtime_seconds": 8.643146583024645,
+  "source": "<committed-run>/silver_events.parquet",
+  "output": "<new-spark-output-directory>",
+  "scope": "distributed projections of canonical Silver; excludes source validation and cloud publication",
+  "experiment": "one real local Spark run; no managed EMR measurement",
+  "client_wall_seconds_including_jvm_startup": 10.824256083986256,
+  "master": "local[2]",
+  "input_sha256": "7ef86acc6e356c1061a5fd4e798a8ee4d67dc8d8d16f8dd077d38633ed592a68",
+  "input_bytes": 4760355,
+  "spark_job_sha256": "49697dc27a38cb60c141d2d7aab9fc7d116e9a4f1e99be354cfcf594a249b90d",
+  "source_implementation_hash": "1a5f598ef9f77c4ab48e238a5ff722b9a933d21eac69d250ce08476e79cef830",
+  "environment": {
+    "python": "3.11.14",
+    "os": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64"
+  },
+  "command": "python scripts/benchmark_spark.py --manifest <committed-head.json> --output <new-directory> --result <result.json> --master local[2]",
+  "measurement_boundary": "runtime_seconds starts after SparkSession creation and includes reads, assertions, shuffles and writes",
+  "path_note": "Host-specific paths replaced with portable aliases for public evidence; checksums and measured results unchanged."
+}

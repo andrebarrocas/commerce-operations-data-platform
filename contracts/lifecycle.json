@@ -1,0 +1,68 @@
+{
+  "order": {
+    "__start__": [
+      "ORDER_CREATED"
+    ],
+    "ORDER_CREATED": [
+      "ORDER_CANCELLED"
+    ]
+  },
+  "reservation": {
+    "__start__": [
+      "INVENTORY_RESERVED"
+    ],
+    "INVENTORY_RESERVED": [
+      "INVENTORY_RELEASED"
+    ],
+    "INVENTORY_RELEASED": [
+      "INVENTORY_RELEASED"
+    ]
+  },
+  "package": {
+    "__start__": [
+      "PACKAGE_CREATED"
+    ],
+    "PACKAGE_CREATED": [
+      "PACKAGE_SCANNED"
+    ],
+    "PACKAGE_SCANNED": [
+      "PACKAGE_SCANNED"
+    ]
+  },
+  "shipment": {
+    "__start__": [
+      "SHIPMENT_DISPATCHED"
+    ],
+    "SHIPMENT_DISPATCHED": [
+      "SHIPMENT_DELAYED",
+      "OUT_FOR_DELIVERY"
+    ],
+    "SHIPMENT_DELAYED": [
+      "SHIPMENT_DELAYED",
+      "OUT_FOR_DELIVERY",
+      "DELIVERED",
+      "DELIVERY_FAILED"
+    ],
+    "OUT_FOR_DELIVERY": [
+      "DELIVERED",
+      "DELIVERY_FAILED",
+      "SHIPMENT_DELAYED"
+    ],
+    "DELIVERY_FAILED": [
+      "SHIPMENT_DELAYED",
+      "OUT_FOR_DELIVERY"
+    ]
+  },
+  "return": {
+    "__start__": [
+      "RETURN_INITIATED"
+    ]
+  },
+  "package_scan_order": {
+    "picked": 10,
+    "packed": 20,
+    "hub_arrival": 30,
+    "hub_departure": 40,
+    "delivery_station": 50
+  }
+}

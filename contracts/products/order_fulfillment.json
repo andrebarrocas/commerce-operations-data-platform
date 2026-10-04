@@ -1,0 +1,268 @@
+{
+  "name": "order_fulfillment",
+  "business_description": "Current order fulfillment outcome, preserving separate shipment counts and initiated return quantities for operational use.",
+  "owner": {
+    "team": "Fictional Commerce Data Platform",
+    "contact": "repository:CODEOWNERS"
+  },
+  "contract_version": "1.0.0",
+  "status": "local_verified",
+  "layer": "gold",
+  "grain": "One current row per order_id after applying accepted corrections.",
+  "primary_key": [
+    "order_id"
+  ],
+  "columns": [
+    {
+      "name": "order_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Synthetic immutable order key."
+    },
+    {
+      "name": "country",
+      "type": "string",
+      "nullable": false,
+      "description": "Destination ISO country code."
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "nullable": false,
+      "description": "Destination subdivision code."
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "nullable": false,
+      "description": "ISO currency; totals are never summed across currencies."
+    },
+    {
+      "name": "order_created_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Original order event time."
+    },
+    {
+      "name": "promised_delivery_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Original customer delivery promise."
+    },
+    {
+      "name": "order_total_minor",
+      "type": "int64",
+      "nullable": false,
+      "description": "Sum of quantity multiplied by unit_price_minor; no tax/shipping in this domain."
+    },
+    {
+      "name": "ordered_units",
+      "type": "int64",
+      "nullable": false,
+      "description": "Total units across unique order lines."
+    },
+    {
+      "name": "cancelled_at",
+      "type": "timestamp",
+      "nullable": true,
+      "description": "Whole-order cancellation time."
+    },
+    {
+      "name": "packages_created",
+      "type": "int64",
+      "nullable": false,
+      "description": "Distinct valid packages."
+    },
+    {
+      "name": "shipments_dispatched",
+      "type": "int64",
+      "nullable": false,
+      "description": "Distinct dispatched shipments."
+    },
+    {
+      "name": "delivered_shipments",
+      "type": "int64",
+      "nullable": false,
+      "description": "Distinct shipments in delivered state."
+    },
+    {
+      "name": "return_initiated_units",
+      "type": "int64",
+      "nullable": false,
+      "description": "Units with an initiated return, not received or restocked."
+    },
+    {
+      "name": "fulfillment_status",
+      "type": "string",
+      "nullable": false,
+      "description": "created, reserved, packaged, dispatched, partially_delivered, delivered, cancelled."
+    },
+    {
+      "name": "is_complete",
+      "type": "boolean",
+      "nullable": false,
+      "description": "All ordered quantities cancelled or allocated to delivered packages; shipment count equality alone is insufficient."
+    },
+    {
+      "name": "last_event_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Maximum effective event time affecting the order."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Deterministic snapshot cutoff (as_of); actual publication wall time is stored in the release manifest."
+    }
+  ],
+  "freshness_sla": {
+    "max_lag_seconds": 900,
+    "measurement": "Time from Kinesis arrival (or local simulated ingress) of newest eligible accepted input to successful publication of a snapshot that includes it. Also alert if scheduled publication heartbeat is overdue. Do not infer freshness from an unchanged business timestamp.",
+    "objective_ratio": 0.99,
+    "evaluation_window": "rolling_30_days",
+    "enforcement": "target_unmeasured"
+  },
+  "completeness_sla": {
+    "minimum_ratio": 0.999,
+    "allowed_lateness_seconds": 172800,
+    "denominator": "Distinct effective ORDER_CREATED order_id keys in the committed Silver snapshot.",
+    "measurement": "Accepted-population product coverage only: matched expected keys / expected keys at committed input high-water mark. Independent source completeness requires generator expected-ID manifest; unknown without source control totals. Empty denominator is not_applicable. Report rejected, orphaned, and pending records separately.",
+    "enforcement": "target_unmeasured"
+  },
+  "quality_rules": [
+    {
+      "id": "required_key",
+      "type": "not_null",
+      "columns": [
+        "order_id"
+      ],
+      "parameters": {},
+      "description": "Every row has a complete business key.",
+      "severity": "error"
+    },
+    {
+      "id": "unique_grain",
+      "type": "unique",
+      "columns": [
+        "order_id"
+      ],
+      "parameters": {},
+      "description": "Published snapshot has one row per declared grain.",
+      "severity": "error"
+    },
+    {
+      "id": "publish_clock_sanity",
+      "type": "timestamp_sanity",
+      "columns": [
+        "updated_at"
+      ],
+      "parameters": {
+        "reference_column": null,
+        "max_future_seconds": 300
+      },
+      "description": "Publication clock is not more than five minutes ahead of evaluation time.",
+      "severity": "error"
+    },
+    {
+      "id": "population_completeness",
+      "type": "completeness",
+      "columns": [
+        "order_id"
+      ],
+      "parameters": {
+        "minimum_ratio": 0.999,
+        "expected_population": "Distinct effective ORDER_CREATED order_id keys in the committed Silver snapshot."
+      },
+      "description": "Compare expected and published keys using the same committed input snapshot after the lateness allowance.",
+      "severity": "error"
+    },
+    {
+      "id": "fulfillment_states",
+      "type": "accepted_values",
+      "columns": [
+        "fulfillment_status"
+      ],
+      "parameters": {
+        "values": [
+          "created",
+          "reserved",
+          "packaged",
+          "dispatched",
+          "partially_delivered",
+          "delivered",
+          "cancelled"
+        ]
+      },
+      "description": "State names are contract controlled.",
+      "severity": "error"
+    },
+    {
+      "id": "positive_ordered_units",
+      "type": "numeric_range",
+      "columns": [
+        "ordered_units"
+      ],
+      "parameters": {
+        "minimum": 1,
+        "maximum": null
+      },
+      "description": "An order has at least one unit.",
+      "severity": "error"
+    },
+    {
+      "id": "nonnegative_totals",
+      "type": "numeric_range",
+      "columns": [
+        "order_total_minor",
+        "packages_created",
+        "shipments_dispatched",
+        "delivered_shipments",
+        "return_initiated_units"
+      ],
+      "parameters": {
+        "minimum": 0,
+        "maximum": null
+      },
+      "description": "Counts and monetary totals cannot be negative.",
+      "severity": "error"
+    }
+  ],
+  "lineage": {
+    "sources": [
+      "silver.events",
+      "silver.order_lines",
+      "silver.package_lines",
+      "shipment_lifecycle"
+    ],
+    "transformation": "Resolve correction chains and aggregate latest lifecycle states plus quantity allocation by order; cancellation and initiation of returns stay separate.",
+    "downstream_consumers": [
+      "Fulfillment operations analysis",
+      "Dimensional fact_order_fulfillment",
+      "Delivery prediction training labels"
+    ]
+  },
+  "usage_metadata": {
+    "intended_uses": [
+      "Fulfillment operations analysis",
+      "Dimensional fact_order_fulfillment",
+      "Delivery prediction training labels"
+    ],
+    "prohibited_uses": [
+      "Representing real customers, company operations, or measured production adoption",
+      "Financial settlement or physical stock reconciliation"
+    ],
+    "classification": "synthetic_public",
+    "access_pattern": "Partition-pruned Parquet snapshots; Redshift serving projection where justified.",
+    "retention_days": 90
+  },
+  "cost_metadata": {
+    "measurement_status": "not_measured",
+    "period_start": null,
+    "period_end": null,
+    "currency": "USD",
+    "compute_usd": null,
+    "storage_bytes": null,
+    "allocation_method": "Storage by measured object bytes; shared job compute allocated by measured input bytes, explicitly an estimate. Report unallocated shared and AWS service charges separately."
+  }
+}

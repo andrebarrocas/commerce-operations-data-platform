@@ -1,0 +1,53 @@
+name: verify
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  local:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -c requirements.lock -e '.[dev,aws]'
+      - run: make check
+  spark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: pip install -c requirements.lock -e '.[dev,spark]'
+      - run: make spark-test
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - uses: opentofu/setup-opentofu@9d84900f3238fab8cd84ce47d658d25dd008be2f # v1
+        with:
+          tofu_version: '1.13.1'
+      - run: python scripts/package_lambda.py
+      - name: Import packaged Linux validation runtime
+        run: |
+          python -m zipfile -e dist/lambda.zip var/lambda-check
+          cd var/lambda-check
+          python -c 'import lambda_handler; from commerce_platform.validation import validate_event; assert validate_event({})'
+      - run: tofu -chdir=infra fmt -check
+      - run: tofu -chdir=infra init -backend=false
+      - run: tofu -chdir=infra validate

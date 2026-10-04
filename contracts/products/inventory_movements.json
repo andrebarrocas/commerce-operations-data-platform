@@ -1,0 +1,254 @@
+{
+  "name": "inventory_movements",
+  "business_description": "Immutable effective reservation and release ledger used to analyze allocation pressure; this is not an on-hand stock ledger.",
+  "owner": {
+    "team": "Fictional Commerce Data Platform",
+    "contact": "repository:CODEOWNERS"
+  },
+  "contract_version": "1.0.0",
+  "status": "local_verified",
+  "layer": "silver",
+  "grain": "One row per effective inventory event_id and line_item_id; a correction replaces the superseded effective row.",
+  "primary_key": [
+    "event_id",
+    "line_item_id"
+  ],
+  "columns": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Effective event key."
+    },
+    {
+      "name": "line_item_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Order line key, unique within order."
+    },
+    {
+      "name": "order_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Parent order."
+    },
+    {
+      "name": "reservation_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Reservation aggregate key."
+    },
+    {
+      "name": "entity_version",
+      "type": "int64",
+      "nullable": false,
+      "description": "Reservation version used for state order."
+    },
+    {
+      "name": "facility_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Facility holding the allocation."
+    },
+    {
+      "name": "sku_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Product stock keeping unit."
+    },
+    {
+      "name": "event_timestamp",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Reservation or release event time."
+    },
+    {
+      "name": "event_date",
+      "type": "date",
+      "nullable": false,
+      "description": "UTC event date for partition pruning."
+    },
+    {
+      "name": "movement_type",
+      "type": "string",
+      "nullable": false,
+      "description": "reserved or released."
+    },
+    {
+      "name": "quantity",
+      "type": "int64",
+      "nullable": false,
+      "description": "Positive movement magnitude."
+    },
+    {
+      "name": "reserved_quantity_delta",
+      "type": "int64",
+      "nullable": false,
+      "description": "Positive for reserve, negative for release; released allocations must not exceed reserved quantities."
+    },
+    {
+      "name": "available_quantity_delta",
+      "type": "int64",
+      "nullable": false,
+      "description": "Negative for reserve, positive for release; excludes shipping and physical stock changes."
+    },
+    {
+      "name": "correction_of_event_id",
+      "type": "string",
+      "nullable": true,
+      "description": "Superseded event ID for corrected movements."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Deterministic snapshot cutoff (as_of); actual publication wall time is stored in the release manifest."
+    }
+  ],
+  "freshness_sla": {
+    "max_lag_seconds": 900,
+    "measurement": "Time from Kinesis arrival (or local simulated ingress) of newest eligible accepted input to successful publication of a snapshot that includes it. Also alert if scheduled publication heartbeat is overdue. Do not infer freshness from an unchanged business timestamp.",
+    "objective_ratio": 0.99,
+    "evaluation_window": "rolling_30_days",
+    "enforcement": "target_unmeasured"
+  },
+  "completeness_sla": {
+    "minimum_ratio": 0.999,
+    "allowed_lateness_seconds": 172800,
+    "denominator": "Effective INVENTORY_RESERVED and INVENTORY_RELEASED event_id and line_item_id pairs in committed Silver snapshot.",
+    "measurement": "Accepted-population product coverage only: matched expected keys / expected keys at committed input high-water mark. Independent source completeness requires generator expected-ID manifest; unknown without source control totals. Empty denominator is not_applicable. Report rejected, orphaned, and pending records separately.",
+    "enforcement": "target_unmeasured"
+  },
+  "quality_rules": [
+    {
+      "id": "required_key",
+      "type": "not_null",
+      "columns": [
+        "event_id",
+        "line_item_id"
+      ],
+      "parameters": {},
+      "description": "Every row has a complete business key.",
+      "severity": "error"
+    },
+    {
+      "id": "unique_grain",
+      "type": "unique",
+      "columns": [
+        "event_id",
+        "line_item_id"
+      ],
+      "parameters": {},
+      "description": "Published snapshot has one row per declared grain.",
+      "severity": "error"
+    },
+    {
+      "id": "publish_clock_sanity",
+      "type": "timestamp_sanity",
+      "columns": [
+        "updated_at"
+      ],
+      "parameters": {
+        "reference_column": null,
+        "max_future_seconds": 300
+      },
+      "description": "Publication clock is not more than five minutes ahead of evaluation time.",
+      "severity": "error"
+    },
+    {
+      "id": "population_completeness",
+      "type": "completeness",
+      "columns": [
+        "event_id",
+        "line_item_id"
+      ],
+      "parameters": {
+        "minimum_ratio": 0.999,
+        "expected_population": "Effective INVENTORY_RESERVED and INVENTORY_RELEASED event_id and line_item_id pairs in committed Silver snapshot."
+      },
+      "description": "Compare expected and published keys using the same committed input snapshot after the lateness allowance.",
+      "severity": "error"
+    },
+    {
+      "id": "movement_types",
+      "type": "accepted_values",
+      "columns": [
+        "movement_type"
+      ],
+      "parameters": {
+        "values": [
+          "reserved",
+          "released"
+        ]
+      },
+      "description": "Only reservation movements are represented.",
+      "severity": "error"
+    },
+    {
+      "id": "positive_quantity",
+      "type": "numeric_range",
+      "columns": [
+        "quantity"
+      ],
+      "parameters": {
+        "minimum": 1,
+        "maximum": 1000000
+      },
+      "description": "Movement magnitude is strictly positive.",
+      "severity": "error"
+    },
+    {
+      "id": "inventory_order_line",
+      "type": "referential_integrity",
+      "columns": [
+        "order_id",
+        "line_item_id"
+      ],
+      "parameters": {
+        "reference_product": "silver.order_lines",
+        "reference_columns": [
+          "order_id",
+          "line_item_id"
+        ],
+        "grace_seconds": 172800
+      },
+      "description": "Inventory references a valid ordered line and quantity.",
+      "severity": "error"
+    }
+  ],
+  "lineage": {
+    "sources": [
+      "silver.events",
+      "silver.order_lines",
+      "silver.facilities",
+      "silver.skus"
+    ],
+    "transformation": "Resolve effective reservation histories; emit signed reservation deltas from accepted inventory events, retaining superseded audit events in Silver.",
+    "downstream_consumers": [
+      "Reservation pressure analysis",
+      "Inventory risk features"
+    ]
+  },
+  "usage_metadata": {
+    "intended_uses": [
+      "Reservation pressure analysis",
+      "Inventory risk features"
+    ],
+    "prohibited_uses": [
+      "Representing real customers, company operations, or measured production adoption",
+      "Financial settlement or physical stock reconciliation"
+    ],
+    "classification": "synthetic_public",
+    "access_pattern": "Partition-pruned Parquet snapshots; Redshift serving projection where justified.",
+    "retention_days": 90
+  },
+  "cost_metadata": {
+    "measurement_status": "not_measured",
+    "period_start": null,
+    "period_end": null,
+    "currency": "USD",
+    "compute_usd": null,
+    "storage_bytes": null,
+    "allocation_method": "Storage by measured object bytes; shared job compute allocated by measured input bytes, explicitly an estimate. Report unallocated shared and AWS service charges separately."
+  }
+}

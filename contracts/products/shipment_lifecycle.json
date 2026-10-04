@@ -1,0 +1,283 @@
+{
+  "name": "shipment_lifecycle",
+  "business_description": "Current shipment state and lifecycle timings for each dispatched shipment, with explicit attempts and original promise.",
+  "owner": {
+    "team": "Fictional Commerce Data Platform",
+    "contact": "repository:CODEOWNERS"
+  },
+  "contract_version": "1.0.0",
+  "status": "local_verified",
+  "layer": "gold",
+  "grain": "One current row per shipment_id with a valid SHIPMENT_DISPATCHED event.",
+  "primary_key": [
+    "shipment_id"
+  ],
+  "columns": [
+    {
+      "name": "shipment_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Synthetic shipment key."
+    },
+    {
+      "name": "order_id",
+      "type": "string",
+      "nullable": false,
+      "description": "One parent order per shipment."
+    },
+    {
+      "name": "origin_facility_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Facility handing shipment to carrier."
+    },
+    {
+      "name": "carrier_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Carrier assigned at dispatch."
+    },
+    {
+      "name": "country",
+      "type": "string",
+      "nullable": false,
+      "description": "Destination country."
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "nullable": false,
+      "description": "Destination subdivision."
+    },
+    {
+      "name": "dispatched_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Effective dispatch event time."
+    },
+    {
+      "name": "promised_delivery_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Original promise at dispatch; delay ETA updates do not relax SLA."
+    },
+    {
+      "name": "out_for_delivery_at",
+      "type": "timestamp",
+      "nullable": true,
+      "description": "First valid out-for-delivery time."
+    },
+    {
+      "name": "delivered_at",
+      "type": "timestamp",
+      "nullable": true,
+      "description": "Effective final delivery time."
+    },
+    {
+      "name": "last_failure_at",
+      "type": "timestamp",
+      "nullable": true,
+      "description": "Most recent failed attempt time."
+    },
+    {
+      "name": "delivery_attempts",
+      "type": "int64",
+      "nullable": false,
+      "description": "Distinct delivery_attempt_id values with out-for-delivery or outcome."
+    },
+    {
+      "name": "failed_delivery_attempts",
+      "type": "int64",
+      "nullable": false,
+      "description": "Distinct attempts with effective failed outcome."
+    },
+    {
+      "name": "delay_events",
+      "type": "int64",
+      "nullable": false,
+      "description": "Distinct effective delay events."
+    },
+    {
+      "name": "package_count",
+      "type": "int64",
+      "nullable": false,
+      "description": "Count of package_ids declared at dispatch."
+    },
+    {
+      "name": "delivered_on_time",
+      "type": "boolean",
+      "nullable": true,
+      "description": "Delivery at or before original promise; null if not delivered."
+    },
+    {
+      "name": "dispatch_to_delivery_seconds",
+      "type": "float64",
+      "nullable": true,
+      "description": "Elapsed duration for delivered shipments; null otherwise."
+    },
+    {
+      "name": "state",
+      "type": "string",
+      "nullable": false,
+      "description": "dispatched, delayed, out_for_delivery, delivery_failed, delivered."
+    },
+    {
+      "name": "last_event_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Maximum effective event time."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Deterministic snapshot cutoff (as_of); actual publication wall time is stored in the release manifest."
+    }
+  ],
+  "freshness_sla": {
+    "max_lag_seconds": 900,
+    "measurement": "Time from Kinesis arrival (or local simulated ingress) of newest eligible accepted input to successful publication of a snapshot that includes it. Also alert if scheduled publication heartbeat is overdue. Do not infer freshness from an unchanged business timestamp.",
+    "objective_ratio": 0.99,
+    "evaluation_window": "rolling_30_days",
+    "enforcement": "target_unmeasured"
+  },
+  "completeness_sla": {
+    "minimum_ratio": 0.999,
+    "allowed_lateness_seconds": 172800,
+    "denominator": "Distinct effective SHIPMENT_DISPATCHED shipment_id keys in the committed Silver snapshot.",
+    "measurement": "Accepted-population product coverage only: matched expected keys / expected keys at committed input high-water mark. Independent source completeness requires generator expected-ID manifest; unknown without source control totals. Empty denominator is not_applicable. Report rejected, orphaned, and pending records separately.",
+    "enforcement": "target_unmeasured"
+  },
+  "quality_rules": [
+    {
+      "id": "required_key",
+      "type": "not_null",
+      "columns": [
+        "shipment_id"
+      ],
+      "parameters": {},
+      "description": "Every row has a complete business key.",
+      "severity": "error"
+    },
+    {
+      "id": "unique_grain",
+      "type": "unique",
+      "columns": [
+        "shipment_id"
+      ],
+      "parameters": {},
+      "description": "Published snapshot has one row per declared grain.",
+      "severity": "error"
+    },
+    {
+      "id": "publish_clock_sanity",
+      "type": "timestamp_sanity",
+      "columns": [
+        "updated_at"
+      ],
+      "parameters": {
+        "reference_column": null,
+        "max_future_seconds": 300
+      },
+      "description": "Publication clock is not more than five minutes ahead of evaluation time.",
+      "severity": "error"
+    },
+    {
+      "id": "population_completeness",
+      "type": "completeness",
+      "columns": [
+        "shipment_id"
+      ],
+      "parameters": {
+        "minimum_ratio": 0.999,
+        "expected_population": "Distinct effective SHIPMENT_DISPATCHED shipment_id keys in the committed Silver snapshot."
+      },
+      "description": "Compare expected and published keys using the same committed input snapshot after the lateness allowance.",
+      "severity": "error"
+    },
+    {
+      "id": "shipment_states",
+      "type": "accepted_values",
+      "columns": [
+        "state"
+      ],
+      "parameters": {
+        "values": [
+          "dispatched",
+          "delayed",
+          "out_for_delivery",
+          "delivery_failed",
+          "delivered"
+        ]
+      },
+      "description": "States follow the documented lifecycle.",
+      "severity": "error"
+    },
+    {
+      "id": "nonnegative_latency",
+      "type": "numeric_range",
+      "columns": [
+        "dispatch_to_delivery_seconds"
+      ],
+      "parameters": {
+        "minimum": 0,
+        "maximum": null
+      },
+      "description": "Delivered events may not precede dispatch.",
+      "severity": "error"
+    },
+    {
+      "id": "shipment_parent_order",
+      "type": "referential_integrity",
+      "columns": [
+        "order_id"
+      ],
+      "parameters": {
+        "reference_product": "silver.orders",
+        "reference_columns": [
+          "order_id"
+        ],
+        "grace_seconds": 172800
+      },
+      "description": "Missing parents remain pending before the grace deadline.",
+      "severity": "error"
+    }
+  ],
+  "lineage": {
+    "sources": [
+      "silver.events",
+      "silver.package_lines"
+    ],
+    "transformation": "Fold ordered shipment aggregate versions; preserve all event history separately, then derive attempt and time measures.",
+    "downstream_consumers": [
+      "Shipment operations analysis",
+      "Dimensional fact_shipment_delivery",
+      "Carrier and delivery reliability aggregates",
+      "Delivery delay features"
+    ]
+  },
+  "usage_metadata": {
+    "intended_uses": [
+      "Shipment operations analysis",
+      "Dimensional fact_shipment_delivery",
+      "Carrier and delivery reliability aggregates",
+      "Delivery delay features"
+    ],
+    "prohibited_uses": [
+      "Representing real customers, company operations, or measured production adoption",
+      "Financial settlement or physical stock reconciliation"
+    ],
+    "classification": "synthetic_public",
+    "access_pattern": "Partition-pruned Parquet snapshots; Redshift serving projection where justified.",
+    "retention_days": 90
+  },
+  "cost_metadata": {
+    "measurement_status": "not_measured",
+    "period_start": null,
+    "period_end": null,
+    "currency": "USD",
+    "compute_usd": null,
+    "storage_bytes": null,
+    "allocation_method": "Storage by measured object bytes; shared job compute allocated by measured input bytes, explicitly an estimate. Report unallocated shared and AWS service charges separately."
+  }
+}

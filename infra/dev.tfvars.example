@@ -1,0 +1,8 @@
+aws_region        = "eu-west-1"
+project_name      = "commerce-platform"
+environment       = "dev"
+raw_retention_days = 90
+lambda_zip_path   = "../dist/lambda.zip"
+enable_redshift   = false
+# Supply existing private subnet/security-group IDs only if enabling Redshift.
+# Existing notification action ARNs can be passed in alarm_action_arns.

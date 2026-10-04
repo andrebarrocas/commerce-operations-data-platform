@@ -1,0 +1,227 @@
+{
+  "name": "facility_performance",
+  "business_description": "Hourly operational activity at fulfillment origins with volume and dispatch latency measures.",
+  "owner": {
+    "team": "Fictional Commerce Data Platform",
+    "contact": "repository:CODEOWNERS"
+  },
+  "contract_version": "1.0.0",
+  "status": "local_verified",
+  "layer": "gold",
+  "grain": "One row per facility_id and UTC window_start for each facility-hour containing an eligible event.",
+  "primary_key": [
+    "facility_id",
+    "window_start"
+  ],
+  "columns": [
+    {
+      "name": "facility_id",
+      "type": "string",
+      "nullable": false,
+      "description": "Origin facility key."
+    },
+    {
+      "name": "country",
+      "type": "string",
+      "nullable": false,
+      "description": "Facility country, joined from facility reference data."
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "nullable": false,
+      "description": "Facility subdivision."
+    },
+    {
+      "name": "window_start",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "UTC hour inclusive."
+    },
+    {
+      "name": "window_end",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "UTC hour exclusive."
+    },
+    {
+      "name": "facility_volume_1h",
+      "type": "int64",
+      "nullable": false,
+      "description": "Effective reservation, release, package-created and dispatched events attributed to this facility-hour."
+    },
+    {
+      "name": "reserved_units",
+      "type": "int64",
+      "nullable": false,
+      "description": "Reserved quantities by reservation event time."
+    },
+    {
+      "name": "released_units",
+      "type": "int64",
+      "nullable": false,
+      "description": "Released quantities by release event time."
+    },
+    {
+      "name": "packages_created",
+      "type": "int64",
+      "nullable": false,
+      "description": "Packages created during the hour."
+    },
+    {
+      "name": "shipments_dispatched",
+      "type": "int64",
+      "nullable": false,
+      "description": "Shipments dispatched during the hour."
+    },
+    {
+      "name": "avg_dispatch_latency_seconds",
+      "type": "float64",
+      "nullable": true,
+      "description": "Mean first-package-created to shipment dispatch duration for dispatches in this hour."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp",
+      "nullable": false,
+      "description": "Deterministic snapshot cutoff (as_of); actual publication wall time is stored in the release manifest."
+    }
+  ],
+  "freshness_sla": {
+    "max_lag_seconds": 3600,
+    "measurement": "Time from Kinesis arrival (or local simulated ingress) of newest eligible accepted input to successful publication of a snapshot that includes it. Also alert if scheduled publication heartbeat is overdue. Do not infer freshness from an unchanged business timestamp.",
+    "objective_ratio": 0.99,
+    "evaluation_window": "rolling_30_days",
+    "enforcement": "target_unmeasured"
+  },
+  "completeness_sla": {
+    "minimum_ratio": 0.999,
+    "allowed_lateness_seconds": 172800,
+    "denominator": "Distinct facility_id and UTC event-hour keys among effective INVENTORY_RESERVED, INVENTORY_RELEASED, PACKAGE_CREATED and SHIPMENT_DISPATCHED events.",
+    "measurement": "Accepted-population product coverage only: matched expected keys / expected keys at committed input high-water mark. Independent source completeness requires generator expected-ID manifest; unknown without source control totals. Empty denominator is not_applicable. Report rejected, orphaned, and pending records separately.",
+    "enforcement": "target_unmeasured"
+  },
+  "quality_rules": [
+    {
+      "id": "required_key",
+      "type": "not_null",
+      "columns": [
+        "facility_id",
+        "window_start"
+      ],
+      "parameters": {},
+      "description": "Every row has a complete business key.",
+      "severity": "error"
+    },
+    {
+      "id": "unique_grain",
+      "type": "unique",
+      "columns": [
+        "facility_id",
+        "window_start"
+      ],
+      "parameters": {},
+      "description": "Published snapshot has one row per declared grain.",
+      "severity": "error"
+    },
+    {
+      "id": "publish_clock_sanity",
+      "type": "timestamp_sanity",
+      "columns": [
+        "updated_at"
+      ],
+      "parameters": {
+        "reference_column": null,
+        "max_future_seconds": 300
+      },
+      "description": "Publication clock is not more than five minutes ahead of evaluation time.",
+      "severity": "error"
+    },
+    {
+      "id": "population_completeness",
+      "type": "completeness",
+      "columns": [
+        "facility_id",
+        "window_start"
+      ],
+      "parameters": {
+        "minimum_ratio": 0.999,
+        "expected_population": "Distinct facility_id and UTC event-hour keys among effective INVENTORY_RESERVED, INVENTORY_RELEASED, PACKAGE_CREATED and SHIPMENT_DISPATCHED events."
+      },
+      "description": "Compare expected and published keys using the same committed input snapshot after the lateness allowance.",
+      "severity": "error"
+    },
+    {
+      "id": "facility_counts",
+      "type": "numeric_range",
+      "columns": [
+        "facility_volume_1h",
+        "reserved_units",
+        "released_units",
+        "packages_created",
+        "shipments_dispatched"
+      ],
+      "parameters": {
+        "minimum": 0,
+        "maximum": null
+      },
+      "description": "Hourly counts cannot be negative.",
+      "severity": "error"
+    },
+    {
+      "id": "facility_reference",
+      "type": "referential_integrity",
+      "columns": [
+        "facility_id"
+      ],
+      "parameters": {
+        "reference_product": "silver.facilities",
+        "reference_columns": [
+          "facility_id"
+        ],
+        "grace_seconds": 0
+      },
+      "description": "All synthetic facility identifiers resolve to seeded reference data.",
+      "severity": "error"
+    }
+  ],
+  "lineage": {
+    "sources": [
+      "silver.events",
+      "silver.facilities",
+      "silver.package_lines",
+      "shipment_lifecycle"
+    ],
+    "transformation": "Aggregate by facility and event-time hour; join dispatch to earliest package-created timestamp of its declared packages.",
+    "downstream_consumers": [
+      "Facility capacity analysis",
+      "Operational anomaly features",
+      "facility_volume_1h feature",
+      "avg_dispatch_latency_7d feature"
+    ]
+  },
+  "usage_metadata": {
+    "intended_uses": [
+      "Facility capacity analysis",
+      "Operational anomaly features",
+      "facility_volume_1h feature",
+      "avg_dispatch_latency_7d feature"
+    ],
+    "prohibited_uses": [
+      "Representing real customers, company operations, or measured production adoption",
+      "Financial settlement or physical stock reconciliation"
+    ],
+    "classification": "synthetic_public",
+    "access_pattern": "Partition-pruned Parquet snapshots; Redshift serving projection where justified.",
+    "retention_days": 90
+  },
+  "cost_metadata": {
+    "measurement_status": "not_measured",
+    "period_start": null,
+    "period_end": null,
+    "currency": "USD",
+    "compute_usd": null,
+    "storage_bytes": null,
+    "allocation_method": "Storage by measured object bytes; shared job compute allocated by measured input bytes, explicitly an estimate. Report unallocated shared and AWS service charges separately."
+  }
+}

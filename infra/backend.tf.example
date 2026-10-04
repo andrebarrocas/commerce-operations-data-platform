@@ -1,0 +1,8 @@
+# Copy to backend.tf before cloud plan/apply. The administrative state bucket
+# must already exist independently of this application stack.
+terraform {
+  backend "s3" {
+    encrypt      = true
+    use_lockfile = true
+  }
+}

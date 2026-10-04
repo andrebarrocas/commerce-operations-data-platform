@@ -1,0 +1,5 @@
+# Replace using existing private, encrypted, versioned administrative storage.
+# Keep real backend configuration outside Git. Never include credentials here.
+bucket = "replace-with-your-administrative-state-bucket"
+key    = "commerce-platform/dev/terraform.tfstate"
+region = "eu-west-1"
