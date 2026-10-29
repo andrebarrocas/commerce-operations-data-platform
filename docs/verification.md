@@ -10,6 +10,8 @@ The separate public CLI verification generated **1,000 orders and 14,307 distinc
 
 The [original GitHub Actions run](https://github.com/andrebarrocas/commerce-operations-data-platform/actions/runs/37200806047) was inspected and all three jobs passed on Linux: local tests/SQL/lint/types/contracts, real Spark, and Linux Lambda packaging/import plus OpenTofu validation. The workflow now also runs local verification on Python 3.11 and 3.12, repeats the public CLI demonstration, and uploads JUnit and JSON reports. The README badge links to [current hosted results](https://github.com/andrebarrocas/commerce-operations-data-platform/actions/workflows/ci.yml).
 
+The [showcase commit's hosted run](https://github.com/andrebarrocas/commerce-operations-data-platform/actions/runs/40861898451) passed all four jobs, including both Python versions and the uploaded demonstration reports. Its runner annotations identified deprecated Node 20 Actions; workflow pins were subsequently refreshed to releases declaring Node 24, and runners were fixed to Ubuntu 24.04 for reproducibility. Manual deployment remains unexecuted and requires the documented AWS setup.
+
 Reproduce the public CLI check from the source checkout after installing the documented dependencies:
 
 ```bash
