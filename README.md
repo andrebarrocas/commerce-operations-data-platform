@@ -1,8 +1,18 @@
 # Production-Grade Commerce Operations Data Platform
 
+[![Verify](https://github.com/andrebarrocas/commerce-operations-data-platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/andrebarrocas/commerce-operations-data-platform/actions/workflows/ci.yml)
+
+A personal data engineering project by [André Barrocas](https://github.com/andrebarrocas), author and maintainer.
+
 Independent data engineering portfolio for fictional **Meridian Commerce**. All records, business rules, schemas and designs are synthetic. There is no employer affiliation, production usage, proprietary architecture or claimed performance improvement.
 
 The working local platform turns versioned commerce events into immutable Parquet snapshots, six reusable data products, dimensional models and point-in-time feature datasets. It preserves malformed inputs, reconciles late history, detects identity conflicts, applies explicit corrections, and publishes through a single atomic manifest. AWS adapters, infrastructure and warehouse experiments are included; **AWS deployment and Redshift measurements have not been performed**.
+
+## Review the engineering
+
+The implementation focuses on decisions I want to make inspectable: separating transport retries from conflicting event identities, preserving correction history without leaking future information into features, and keeping failed runs out of committed datasets. The [decision records](docs/adr/README.md) explain the trade-offs; the [reliability tests](tests/test_reliability.py) and [business reconciliation tests](tests/test_semantics.py) exercise the consequences.
+
+The [GitHub Actions checks](https://github.com/andrebarrocas/commerce-operations-data-platform/actions/workflows/ci.yml) run on Linux. They cover Python/SQL correctness, a real Java-backed Spark job, and the packaged Lambda validation runtime plus OpenTofu configuration. [Recorded verification](docs/verification.md) distinguishes executed checks from cloud work still awaiting deployment.
 
 ## Run locally
 
@@ -15,6 +25,14 @@ pip install -c requirements.lock -e '.[dev,aws]'
 make check
 commerce demo --orders 1000 --directory var/demo
 ```
+
+For a short demonstration with explicit pass/fail checks and a JSON evidence report:
+
+```bash
+python scripts/verify_demo.py --work var/reviewer-check --report var/reviewer-check.json
+```
+
+Use a new work directory and report path for each run. This command invokes the installed CLI, checks all 22 Parquet artifacts against their committed checksums, verifies all six product schemas and grains, reconciles the producer control total, checks quarantine, and proves an exact rerun reuses the release. CI repeats this demonstration and attaches the report to its run.
 
 The demo generates coherent orders, line items, reservations, packages, shipments, delivery attempts, cancellations and returns. It includes out-of-order and >48-hour-late arrivals, duplicate deliveries and malformed input. `var/demo/lake/head.json` identifies the committed release, its checksums, quality results and measured timings. Read artifacts from that manifest; globbing all runs would include failed attempts and old releases.
 

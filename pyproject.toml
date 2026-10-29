@@ -6,8 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "commerce-operations-platform"
 version = "0.1.0"
 description = "Independent synthetic commerce data engineering portfolio"
+authors = [{name = "André Barrocas"}]
 requires-python = ">=3.11,<3.13"
 dependencies = ["duckdb>=1.2,<2", "pyarrow>=18,<24", "jsonschema[format]>=4.23,<5"]
+
+[project.urls]
+Repository = "https://github.com/andrebarrocas/commerce-operations-data-platform"
+Issues = "https://github.com/andrebarrocas/commerce-operations-data-platform/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "ruff>=0.11,<1", "mypy>=1.15,<2", "types-jsonschema"]
