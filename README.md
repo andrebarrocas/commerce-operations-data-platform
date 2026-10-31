@@ -1,5 +1,7 @@
 # Production-Grade Commerce Operations Data Platform
 
+This platform reconstructs the history of orders, inventory reservations, packages and shipments from versioned events. It is designed to answer operational questions about fulfillment progress, delivery reliability and inventory allocation while making data quality, lineage and replay behavior inspectable.
+
 Independent data engineering portfolio for fictional **Meridian Commerce**. All records, business rules, schemas and designs are synthetic. There is no employer affiliation, production usage, proprietary architecture or claimed performance improvement.
 
 The working local platform turns versioned commerce events into immutable Parquet snapshots, six reusable data products, dimensional models and point-in-time feature datasets. It preserves malformed inputs, reconciles late history, detects identity conflicts, applies explicit corrections, and publishes through a single atomic manifest. AWS adapters, infrastructure and warehouse experiments are included; **AWS deployment and Redshift measurements have not been performed**.
