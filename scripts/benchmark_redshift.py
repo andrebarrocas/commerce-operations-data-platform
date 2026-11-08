@@ -60,8 +60,8 @@ def table_ddl(name: str, variant: str) -> str:
     return f"CREATE TABLE {name} ({', '.join(columns)}) {VARIANTS[variant]}"
 
 
-def copy_sql(table: str, manifest: str, iam_role: str) -> str:
-    qualified(table)
+def copy_sql(table: str, manifest: str, iam_role: str, *, temporary: bool = False) -> str:
+    identifier(table) if temporary else qualified(table)
     if not re.fullmatch(r"s3://[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]/[^\x00-\x1f]+", manifest):
         raise ValueError("Expected a complete S3 manifest URI")
     if not re.fullmatch(
@@ -146,7 +146,7 @@ class Session:
             "statement_id": statement_id,
             "session_id": self.session_id,
             "client_wall_seconds": wall,
-            "engine_seconds": status.get("Duration", 0) / 1e9 if "Duration" in status else None,
+            "engine_seconds": status["Duration"] / 1e9 if status.get("Duration", -1) >= 0 else None,
             "redshift_query_id": status.get("RedshiftQueryId"),
             "status": status["Status"],
             "timed_out": timed_out,

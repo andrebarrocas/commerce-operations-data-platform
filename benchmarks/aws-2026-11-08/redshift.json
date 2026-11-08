@@ -1,0 +1,18 @@
+{
+  "state": "pass",
+  "scope": "Execute repository COPY/MERGE SQL, replay, rollback and tombstones in AWS.\n\nRequires a fresh disposable commerce schema. Does not provision resources.",
+  "checks": {
+    "copy_merge_and_exact_release_replay": "pass",
+    "release_conflicts_control_totals_duplicate_keys": "pass",
+    "atomic_rollback_after_merge_and_ledger_write": "pass",
+    "affected_key_tombstone_delete": "pass",
+    "historical_release_restoration": "pass",
+    "concurrent_same_release_session_isolation": "pass",
+    "all_copied_values_match_parquet_source": "pass"
+  },
+  "source_rows": 1099,
+  "source_sha256": "4c5a0bc8038043b8cf557ca96a01d6d3f0d3e3de2bb39f1db093db1925f90da8",
+  "region": "eu-west-1",
+  "copy_engine_seconds": 1.413917354,
+  "initial_merge_engine_seconds": 3.927272462
+}

@@ -10,7 +10,7 @@ Measure baseline, exact replay, a pre-publication injected failure followed by r
 
 ## Redshift protocol
 
-Cloud results initially **unmeasured**. Store scripts that load identical seeded inputs into AUTO, EVEN and KEY variants, collect EXPLAIN and query IDs, disable result caching per session, randomize query/variant order, execute warmups and multiple measured runs, and save medians/tails with row counts and system metadata. Keep joins, date predicates, windows and aggregations fixed across variants. Record redistribution, skew, compression and scan behavior only from observed plans/system views. Materialized view refresh cost must accompany query benefit. Redshift does not enforce primary/foreign key integrity; run explicit data tests before query optimization can rely on constraints.
+Cloud results were initially unmeasured; the supervised 2026-11-08 experiment is recorded below. Load identical seeded inputs into AUTO, EVEN and KEY variants, collect EXPLAIN and query IDs, disable result caching per session, randomize query/variant order, execute warmups and multiple measured runs, and save medians/tails with row counts and system metadata. Keep joins, date predicates, windows and aggregations fixed across variants. Record redistribution, skew, compression and scan behavior only from observed plans/system views. Materialized view refresh cost must accompany query benefit. Redshift does not enforce primary/foreign key integrity; run explicit data tests before query optimization can rely on constraints.
 
 Client elapsed time includes API/network/polling and must be labelled. Engine query duration requires system query-history evidence. Do not manufacture a latency when credentials or a warehouse are unavailable.
 
@@ -40,7 +40,7 @@ All three rebuilds and recovery produced the same logical result hash. The earli
 
 [Recorded Spark result](benchmarks/spark-71568-events.json): PySpark 3.5.7, Java 17.0.20.1, `local[2]`, 71,568 canonical Silver events (4,760,355 bytes). The measured Spark job took **8.643 seconds**, with **10.824 seconds** of client wall time including JVM startup. It wrote 9,999 order-line facts, 5,500 shipment summaries and 228 facility-hour rows. This is one local run.
 
-The Python and Spark measurements cover different workloads: Python includes raw validation, semantic reconciliation and nineteen product/model outputs, while Spark starts from canonical Silver and builds three projections. These timings do not establish a comparative speedup or EMR runtime. Redshift engine/query latency, EMR runtime, AWS fault recovery and cloud costs remain **not measured**.
+The Python and Spark measurements cover different workloads: Python includes raw validation, semantic reconciliation and nineteen product/model outputs, while Spark starts from canonical Silver and builds three projections. These timings do not establish a comparative speedup or EMR runtime. Separate cloud observations follow; a final reconciled AWS dollar invoice remains unavailable.
 
 To reproduce the Spark experiment after producing a committed local snapshot:
 
@@ -48,3 +48,11 @@ To reproduce the Spark experiment after producing a committed local snapshot:
 python scripts/benchmark_spark.py --manifest var/lake/head.json \
   --output var/spark-benchmark-new --result benchmarks/my-spark-run.json
 ```
+
+## Observed AWS acceptance — 2026-11-08
+
+[Cloud evidence and measurement boundaries](docs/aws-verification.md): 1,000 orders produced 14,307 unique events. Kinesis/Firehose retained all 14,321 attempts, including ten duplicates and four malformed payloads. Control reconciliation took 157.990 seconds from experiment start; this is not per-event transport latency. An actual denied-write/retry-exhaustion drill retained the failed batch in 26.969 seconds and recovered in 9.025 seconds after replay.
+
+EMR 7.12.0 / Spark 3.5.6-amzn-1 processed the captured Silver snapshot in 17.225 driver-measured transformation seconds, with 70 AWS execution seconds and 126.866 submission-to-terminal seconds. All three projections matched the local SQL products. The initial permission failure is retained alongside successful retry evidence.
+
+Redshift correctness passed for 1,099 shipments. AUTO, EVEN and KEY benchmark variants each used one warmup and three measured trials over carrier aggregates, order joins and time predicates; results matched. [Observed medians and samples](benchmarks/aws-2026-11-08/redshift-benchmark.json) and [actual plans/query receipts](benchmarks/aws-2026-11-08/redshift-statements.json) are retained. This small population tests the harness, not production-scale tuning; no speedup or preferred layout is claimed.

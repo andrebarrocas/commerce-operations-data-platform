@@ -1,0 +1,121 @@
+{
+  "row_count": 1099,
+  "schema": "commerce_bench_20261108",
+  "summaries": {
+    "auto/carrier_daily": {
+      "engine_seconds": {
+        "median": 0.059747761,
+        "p95_nearest_rank": 0.094897938,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.3193090409913566,
+        "p95_nearest_rank": 1.4987943330197595,
+        "samples": 3
+      }
+    },
+    "auto/order_join": {
+      "engine_seconds": {
+        "median": 0.08034899,
+        "p95_nearest_rank": 0.152914248,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.2366345830087084,
+        "p95_nearest_rank": 1.2680912080104463,
+        "samples": 3
+      }
+    },
+    "auto/time_filter": {
+      "engine_seconds": {
+        "median": 0.052707616,
+        "p95_nearest_rank": 0.087193596,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.352255875011906,
+        "p95_nearest_rank": 1.409927750006318,
+        "samples": 3
+      }
+    },
+    "even/carrier_daily": {
+      "engine_seconds": {
+        "median": 0.059515423,
+        "p95_nearest_rank": 0.060271261,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.2874040829774458,
+        "p95_nearest_rank": 1.333430500002578,
+        "samples": 3
+      }
+    },
+    "even/order_join": {
+      "engine_seconds": {
+        "median": 0.082339168,
+        "p95_nearest_rank": 0.127306214,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.3479897920042276,
+        "p95_nearest_rank": 1.370887875003973,
+        "samples": 3
+      }
+    },
+    "even/time_filter": {
+      "engine_seconds": {
+        "median": 0.052154514,
+        "p95_nearest_rank": 0.093278461,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.2747104580048472,
+        "p95_nearest_rank": 1.4079281250014901,
+        "samples": 3
+      }
+    },
+    "key/carrier_daily": {
+      "engine_seconds": {
+        "median": 0.062773283,
+        "p95_nearest_rank": 0.103547437,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.2668901660072152,
+        "p95_nearest_rank": 1.347132082999451,
+        "samples": 3
+      }
+    },
+    "key/order_join": {
+      "engine_seconds": {
+        "median": 0.075229731,
+        "p95_nearest_rank": 0.154997574,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.3619799579901155,
+        "p95_nearest_rank": 3.247311166021973,
+        "samples": 3
+      }
+    },
+    "key/time_filter": {
+      "engine_seconds": {
+        "median": 0.053565881,
+        "p95_nearest_rank": 0.054070492,
+        "samples": 3
+      },
+      "client_wall_seconds": {
+        "median": 1.2714282079832628,
+        "p95_nearest_rank": 5.272846792009659,
+        "samples": 3
+      }
+    }
+  },
+  "workload_result_hashes": {
+    "carrier_daily": "b2424db0c054643aa723d52ee5b93ccc9379d6aa88d597d88dc9a89499f6dd61",
+    "order_join": "e95a7da59816809d0773aed032013ded194a31ccceaed2706bcb40419a348b95",
+    "time_filter": "bd3a71395c7de32ba94913a6f5c4c458b2c2ced348709eb1dac3d2d600e4dac7"
+  },
+  "cloud_experiment_completed": true,
+  "cleanup_sql": "DROP SCHEMA commerce_bench_20261108 CASCADE;"
+}

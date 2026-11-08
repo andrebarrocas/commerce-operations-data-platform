@@ -73,6 +73,15 @@ def test_failure_and_timeout_keep_evidence_and_never_return_success(tmp_path: Pa
     assert client.cancelled == ["statement-1"]
 
 
+def test_negative_duration_sentinel_is_not_reported_as_a_latency(tmp_path):
+    class MissingDuration(FakeDataAPI):
+        def describe_statement(self, **kwargs):
+            return {**super().describe_statement(**kwargs), "Duration": -1}
+
+    runner = benchmark.Session(MissingDuration(), "wg", "db", tmp_path / "sentinel.jsonl")
+    assert runner.execute("SELECT 1", phase="trial", label="sentinel")["engine_seconds"] is None
+
+
 @pytest.mark.parametrize(
     "bad", ["public.x; DROP SCHEMA public", "x", "schema.table.extra", 'a."b"', "a.b c"]
 )
@@ -90,6 +99,20 @@ def test_copy_paths_are_quoted_and_role_is_validated() -> None:
     assert "it''s-manifest" in sql
     assert "FORMAT AS PARQUET MANIFEST" in sql
     assert "REGION" not in sql  # Unsupported by columnar COPY.
+    temporary = benchmark.copy_sql(
+        "stage_shipment_lifecycle",
+        "s3://bucket-name/manifest.json",
+        "arn:aws:iam::123456789012:role/redshift-copy",
+        temporary=True,
+    )
+    assert temporary.startswith("COPY stage_shipment_lifecycle FROM")
+    with pytest.raises(ValueError):
+        benchmark.copy_sql(
+            "stage; DROP TABLE x",
+            "s3://bucket-name/manifest.json",
+            "arn:aws:iam::123456789012:role/redshift-copy",
+            temporary=True,
+        )
     with pytest.raises(ValueError):
         benchmark.copy_sql(
             "commerce_bench_test.base", "s3://bucket-name/data", "role'; DROP TABLE x"

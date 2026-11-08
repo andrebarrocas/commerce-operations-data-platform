@@ -38,6 +38,16 @@ The driver reported **17.225 seconds** inside the Spark transformation. AWS repo
 
 An [initial failed job](../benchmarks/aws-2026-11-08/emr-initial-failure.json) exposed missing `logs:DescribeLogGroups`. The runtime role now permits that read action only in the selected region; mutations remain scoped to the pre-created project log group. The retry passed without broadening raw/final-output deletion rights. This is cloud execution of projections over already reconciled Silver, not a distributed raw-to-Silver implementation or an S3/Glue release coordinator.
 
+## Redshift correctness and benchmark
+
+The repository DDL and atomic publish procedure executed on the private 8-RPU Serverless workgroup. All **1,099 shipment rows and every column value** matched the source Parquet, including microsecond timestamps and nulls. Checks passed for exact release replay, conflicting release hashes, wrong control totals, duplicate staging keys, affected-key tombstones, restoration of the original snapshot and two concurrent independent staging sessions publishing one release.
+
+A nested atomic procedure deliberately raised an exception **after** the real procedure performed MERGE and inserted its ledger row. Subsequent queries proved that both target data and ledger rolled back. This is an executed transactional test, beyond SQL text inspection. Initial COPY engine time was 1.414 seconds; the first MERGE/procedure took 3.927 seconds. [Correctness results](../benchmarks/aws-2026-11-08/redshift.json).
+
+The existing benchmark harness then ran AUTO, EVEN and KEY layouts over the identical 1,099-row population, with result caching disabled, randomized trial order, one warmup and three measured trials per query/layout. Carrier aggregations, order joins and time predicates returned identical results across layouts. EXPLAIN plans, encoding/table diagnostics and query history were captured; materialized-view results matched the base aggregation, and refresh engine time was 0.126 seconds. [Benchmark summary](../benchmarks/aws-2026-11-08/redshift-benchmark.json), [statement receipts and plans](../benchmarks/aws-2026-11-08/redshift-statements.json).
+
+This small acceptance population establishes correctness and harness execution. It does **not** establish a production-scale distribution choice, a performance improvement, or a reliable tail-latency SLO. Client times include Data API/network/polling; engine durations are reported separately. AWS's negative duration sentinel is represented as unavailable, never as a negative query latency.
+
 ## Reproduction and cleanup
 
 Use browser-based `aws login` and temporary SDK credentials. No access key belongs in the repository. With Python AWS dependencies installed:
