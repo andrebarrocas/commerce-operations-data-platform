@@ -1,6 +1,6 @@
 # Executed verification — 2026-10-04
 
-All checks below were executed locally. GitHub Actions and AWS deployment were not run.
+This section records the original local checks on 2026-10-04. Later GitHub Actions and supervised AWS execution are recorded in [cloud verification](aws-verification.md); they do not retroactively change the scope of these original measurements.
 
 | Gate | Result | Evidence boundary |
 |---|---|---|
@@ -34,4 +34,4 @@ The implementation review found and fixed source-frame ambiguity, calendar valid
 
 ## Interpreting completion
 
-The repository contains a verified local engineering implementation and AWS deployment assets. It does **not** constitute an operational fully scheduled AWS platform. The remaining work is concrete: supervised AWS deployment with budget, source and IAM failure drills, raw-to-Silver distributed execution/orchestration, transactional S3/Glue publication, actual Redshift SQL/load tests and benchmark capture, and cloud SLA/cost evidence. The roadmap preserves those gates instead of marking unexecuted work complete.
+The repository contains a verified local implementation and a supervised AWS acceptance run. It does **not** constitute an operational fully scheduled AWS platform. The 2026-11-08 gates passed for streaming delivery/failure recovery, EMR projection parity and Redshift load/transaction/concurrency checks. The final local suite passed **122 tests**, including the JVM Spark test; Ruff, configured mypy and machine-readable contract validation passed. Remaining work includes distributed raw-to-Silver execution/orchestration, transactional S3/Glue publication, worker/host-loss experiments, production-scale warehouse tuning, sustained SLA evidence and final billing reconciliation.

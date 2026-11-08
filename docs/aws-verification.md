@@ -50,6 +50,18 @@ This small acceptance population establishes correctness and harness execution. 
 
 ## Reproduction and cleanup
 
+### Observability and verified teardown
+
+CloudWatch received actual `CommercePlatform` EMF attempt metrics. The quarantine-write-failure alarm entered **ALARM** during the denial drill; other observed alarms were OK. There were no notification action ARNs configured, so this establishes alarm evaluation, not notification delivery. [CloudWatch evidence](../benchmarks/aws-2026-11-08/cloudwatch.json). Counts include repeated attempts and must not be interpreted as unique events or achieved freshness/completeness SLOs.
+
+OpenTofu destroyed all **54 managed resources**, and its retained state lists zero resources. Independent API checks confirmed deletion of test buckets and versions, stream, Firehose, validator/mapping, warehouse/namespace/managed admin secret, catalog database, project roles/policy, logs/alarms and private test networking. AWS-created EMR and Redshift service-linked roles were also removed. EMR retains a `TERMINATED` application metadata tombstone, with no listed active application. The original account VPC was preserved. [Teardown evidence](../benchmarks/aws-2026-11-08/cleanup.json).
+
+The customer-managed encryption key is **PendingDeletion**, scheduled for **2026-12-08**, following the configured 30-day safety window. AWS does not permit immediate KMS deletion; [AWS key-deletion documentation](https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html). Scheduled-deletion keys have no key-storage charge unless deletion is cancelled; [AWS KMS pricing](https://aws.amazon.com/kms/pricing/).
+
+Cost Explorer returned `DataUnavailableException` for the current day. [Billing evidence](../benchmarks/aws-2026-11-08/billing.json) therefore remains pending, with no fabricated zero-dollar bill or final cost. Raw private API records, plans, state, identifiers and recovery inventories are not committed.
+
+### Commands
+
 Use browser-based `aws login` and temporary SDK credentials. No access key belongs in the repository. With Python AWS dependencies installed:
 
 ```sh

@@ -1,0 +1,57 @@
+{
+  "region": "eu-west-1",
+  "observed_at": "2026-11-08T16:29:59.531201+00:00",
+  "emf": {
+    "records_processed": {
+      "sum_of_attempt_metrics": 14331.0,
+      "datapoints": 5
+    },
+    "records_rejected": {
+      "sum_of_attempt_metrics": 13.0,
+      "datapoints": 5
+    },
+    "failures": {
+      "sum_of_attempt_metrics": 5.0,
+      "datapoints": 5
+    }
+  },
+  "alarms": [
+    {
+      "name": "batch_quality_failure",
+      "state": "OK",
+      "actions_enabled": true,
+      "action_count": 0
+    },
+    {
+      "name": "quarantine_write_failure",
+      "state": "ALARM",
+      "actions_enabled": true,
+      "action_count": 0
+    },
+    {
+      "name": "raw_delivery_age",
+      "state": "OK",
+      "actions_enabled": true,
+      "action_count": 0
+    },
+    {
+      "name": "stream_write_throttle",
+      "state": "OK",
+      "actions_enabled": true,
+      "action_count": 0
+    },
+    {
+      "name": "validator_errors",
+      "state": "OK",
+      "actions_enabled": true,
+      "action_count": 0
+    },
+    {
+      "name": "validator_lag",
+      "state": "OK",
+      "actions_enabled": true,
+      "action_count": 0
+    }
+  ],
+  "scope": "Actual CloudWatch EMF attempt counts; not unique-event counts. Alarms have no external notification actions configured."
+}

@@ -1,6 +1,6 @@
 # AWS assets and deployment boundary
 
-The repository contains runnable Kinesis producer and Lambda validator adapters, a real Lambda packaging script, and provider-validated infrastructure definitions. No AWS resources have been deployed and no cloud performance measurements have been made. Fake-client tests prove application logic; they do not prove IAM, quotas, delivery behavior, or managed-service recovery.
+The repository contains runnable adapters, a real Linux Lambda package and provider-validated infrastructure definitions. A supervised 2026-11-08 deployment exercised actual Kinesis/Firehose delivery, Lambda failure/recovery, EMR projections and Redshift loads/transactions. See [executed evidence and limits](aws-verification.md). Fake-client tests remain application boundary tests, not substitutes for those managed-service checks.
 
 ## Reproduce local validation
 
@@ -26,7 +26,7 @@ Validation uses OpenTofu 1.13.1 and AWS provider 6.67.0. The official macOS arm6
 | Kinesis | One provisioned shard, 24-hour retention, KMS encryption |
 | Firehose | Kinesis source, 60-second/5-MiB buffering hints, gzip raw S3 delivery, newline processor; no filtering or schema conversion |
 | Lambda | Python 3.11/x86_64, 256 MiB, 30-second timeout, two reserved concurrent executions; row-level signals and quarantine |
-| S3 | Private versioned bucket, public access blocking, bucket-owner enforcement, TLS-only policy, KMS encryption with bucket key |
+| S3 | Private versioned lake plus a separate failed-batch bucket, public access blocking, bucket-owner enforcement, TLS-only policies, KMS encryption |
 | KMS | Project key with rotation and 30-day deletion window; scoped workload actions |
 | Glue | Explicit database; catalog entries must describe committed snapshots |
 | EMR Serverless | No warm workers, 8-vCPU/32-GB maximum, five-minute idle stop, scoped execution role and logs |
@@ -65,7 +65,7 @@ tofu init -backend-config=/secure/location/commerce-backend.hcl
 tofu plan -var-file=dev.tfvars -out=reviewed.tfplan
 ```
 
-A plan contacts AWS; it was not executed here. Review actual account/region, resources, IAM, quotas, network, and cost before applying the saved plan. All variables have defaults for validation; `lambda_zip_path` defaults to `../dist/lambda.zip` relative to `infra/`. Copy `dev.tfvars.example` for intentional overrides. Use a protected deployment environment and persistent remote state in CI.
+A plan contacts AWS. Review actual account/region, resources, IAM, quotas, network, and cost before applying the saved plan. All variables have defaults for validation; `lambda_zip_path` defaults to `../dist/lambda.zip` relative to `infra/`. Copy `dev.tfvars.example` for intentional overrides. Use a protected deployment environment and persistent remote state in CI. The separate `infra/acceptance/` fixture supports supervised temporary experiments with retained local state until verified destruction; it is not the CI deployment backend.
 
 Optional Redshift requires supplied private subnets across three AZs and restricted security groups. Enhanced VPC routing also requires S3 connectivity for COPY. The module creates no VPC, NAT gateway, or public ingress. The precondition checks supplied ID counts, not actual AZ diversity, routes or security-group rules; verify those in the target account. Managed admin credentials avoid passing a password through Terraform input. Prefer short-lived IAM/Data API access for routine automation.
 
@@ -73,7 +73,7 @@ EMR 7.12.0 uses Spark 3.5.6-amzn-1, while local PySpark is pinned separately. It
 
 ## AWS acceptance evidence still required
 
-Retain actual resource/runtime versions, run IDs, control totals, duplicate/malformed scenarios, quarantine-write failure and recovery evidence, S3 raw delivery checks, Lambda lag and billing data. Exercise IAM allow/deny paths, verify the Linux package loads, confirm discarded records reach S3, and prove EMR publication before calling the deployment operational. Redshift needs its own SQL execution, plans and measurements. Unavailable measurements remain unavailable; local timings are not substitutes.
+The supervised run retained actual runtime versions, run IDs, control totals, duplicate/malformed scenarios, IAM denial/recovery, discarded batches, EMR output parity, CloudWatch alarm state and Redshift transaction/query evidence. [Acceptance results](aws-verification.md) do not establish sustained SLAs, worker-loss tolerance, distributed raw reconciliation or transactional S3/Glue publication. Final billing remains unavailable; local timings are not substituted for cloud measurements.
 
 ## Explicit raw capture and deployment automation
 
@@ -88,6 +88,6 @@ commerce ingest --input var/captured-object.jsonl --lake var/aws-capture \
 
 Choose the cutoff deliberately from your experiment, not from this example date. The bridge handles gzip, stores original object identity/version/checksum/line and preserves malformed business bytes. The local engine overwrites producer ingress with captured object availability. An identical recapture is safe; replacing an existing capture with different content fails. These commands are a manually supervised bridge, not distributed S3 batch orchestration.
 
-`.github/workflows/deploy.yml` supports a deliberate `workflow_dispatch` plan or apply. Configure the protected `portfolio-aws` environment, an OIDC-trusting deployment role in `AWS_DEPLOY_ROLE_ARN`, and a pre-existing private state bucket before using it. Its default operation is plan; apply executes the saved plan from that run under remote state locking. Configure environment reviewers/branch restrictions in GitHub—the YAML cannot assert they already exist. Neither this workflow nor CI has been run in GitHub during local development.
+`.github/workflows/deploy.yml` supports a deliberate `workflow_dispatch` plan or apply. Configure the protected `portfolio-aws` environment, an OIDC-trusting deployment role in `AWS_DEPLOY_ROLE_ARN`, and a pre-existing private state bucket before using it. Its default operation is plan; apply executes the saved plan from that run under remote state locking. Configure environment reviewers/branch restrictions in GitHub—the YAML cannot assert they already exist. Verification CI has run on GitHub; the deployment workflow remains unexecuted. The supervised acceptance deployment used temporary browser-login credentials.
 
 The Redshift role trust includes both documented Redshift service principals. The EMR role permits deletion only under Spark task `_temporary` paths inside curated prefixes; it cannot delete raw input or final curated objects. Cloud acceptance must verify the selected EMR committer's exact temporary-object operations and adjust narrowly if its behavior differs. [Redshift Serverless trust requirements](https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-security-other-services.html), [EMR job runtime roles](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/security-iam-runtime-role.html).

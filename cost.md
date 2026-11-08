@@ -24,3 +24,11 @@ Set resource maximum capacity, idle stop, short log retention, raw/snapshot life
 ## Reproducible estimate
 
 For each service: `estimated_cost = measured_units * region_specific_unit_price`. Save units, unit label, source, price date, currency and exclusions alongside the estimate. If any rate is unavailable return `unmeasured`; do not substitute zero. An estimator is not a billing reconciliation.
+
+## Temporary AWS experiment — 2026-11-08
+
+The supervised [cloud acceptance](docs/aws-verification.md) used one provisioned Kinesis shard, EMR without warm workers, and a private Redshift workgroup capped at 8 RPUs, with no NAT gateway. The successful EMR job reported 0.146 vCPU-hours and 0.328 GB-hours; the initial failed permission probe also consumed billable units and remains in the evidence. Local Python execution is not charged as EMR.
+
+All 54 managed resources were destroyed after saving evidence; independent API checks and cleanup of AWS-created service-linked roles are retained in [the teardown report](benchmarks/aws-2026-11-08/cleanup.json). KMS is pending its configured deletion window, not active compute. AWS states scheduled-deletion customer keys have no key-storage charge unless deletion is cancelled: [KMS pricing](https://aws.amazon.com/kms/pricing/).
+
+The current-day Cost Explorer request returned `DataUnavailableException`; the final experiment cost is **pending**, not zero. No savings or free-credit coverage is inferred. The account owner explicitly upgraded the Free plan to access the blocked services; resource teardown does not change the account's billing plan.

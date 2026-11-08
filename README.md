@@ -4,7 +4,7 @@ This platform reconstructs the history of orders, inventory reservations, packag
 
 Independent data engineering portfolio for fictional **Meridian Commerce**. All records, business rules, schemas and designs are synthetic. There is no employer affiliation, production usage, proprietary architecture or claimed performance improvement.
 
-The working local platform turns versioned commerce events into immutable Parquet snapshots, six reusable data products, dimensional models and point-in-time feature datasets. It preserves malformed inputs, reconciles late history, detects identity conflicts, applies explicit corrections, and publishes through a single atomic manifest. The packaged validator has also passed real AWS Lambda/S3 acceptance, including denied writes and recovery; see [cloud verification](docs/aws-verification.md). Full platform acceptance and warehouse measurements are tracked separately from local results.
+The working local platform turns versioned commerce events into immutable Parquet snapshots, six reusable data products, dimensional models and point-in-time feature datasets. It preserves malformed inputs, reconciles late history, detects identity conflicts, applies explicit corrections, and publishes through a single atomic manifest. A temporary AWS deployment has passed Kinesis/Firehose delivery, Lambda quarantine/recovery, EMR projection parity and Redshift transactional load tests; see [cloud verification](docs/aws-verification.md). Raw-to-Silver reconciliation uses a supervised local bridge; unattended cloud orchestration and transactional S3/Glue publication remain unimplemented.
 
 ## Run locally
 
@@ -39,9 +39,10 @@ Backfill bounds are half-open UTC dates, limited to 31 days. They filter the thr
 | Foundation | Seeded Python generator, static references, strict validation, configurable quality | Unit, contract, calendar, compatibility and business-rule tests |
 | Local lake | Raw preservation; Bronze/Silver/Gold Parquet; correction history; quarantine; atomic commit | Duplicate, conflict, late-event, replay, checksum, backfill and failure-recovery tests |
 | Products | Six exact product schemas; facts/dimensions; three feature outputs | Executed SQL, grain, quantity, FK, temporal availability and deterministic result tests |
-| Spark | Actual PySpark projections of canonical Silver, joins, windows, partitioned writes | JVM integration test; separate measured Spark evidence |
-| AWS assets | Kinesis retrying producer, Lambda quarantine signals, Firehose capture bridge, Terraform | Fake-client tests and configuration validation; no managed-service equivalence claim |
-| Operations | CLI, benchmark harnesses, runbooks, metric definitions and CI | Real local measurements; cloud metrics explicitly unmeasured |
+| Spark | Actual PySpark projections of canonical Silver, joins, windows, partitioned writes | JVM integration and actual EMR job; all projection business columns match local SQL |
+| AWS integration | Kinesis producer, Lambda quarantine signals, Firehose capture bridge, Terraform | Real delivery, duplicates, malformed bytes, denied writes, retry exhaustion and replay |
+| Warehouse | Redshift COPY, atomic MERGE/ledger, tombstones, session-local staging | Real rollback/replay/concurrency tests; small AUTO/EVEN/KEY and materialized-view experiment |
+| Operations | CLI, benchmark harnesses, runbooks, bounded metrics and CI | Real local/cloud measurements, CloudWatch failure alarm observed; final billing pending |
 
 The product surface comprises `order_fulfillment`, `shipment_lifecycle`, `facility_performance`, `carrier_performance`, `delivery_reliability`, and `inventory_movements`. Each has a machine-readable owner role, schema, grain, quality rules, SLA targets, lineage, usage restrictions and cost metadata. Source completeness, transformation coverage and rejected-record reconciliation are separate measures. Targets are not achieved SLAs.
 
@@ -56,7 +57,7 @@ python spark/curate.py --input /absolute/path/from/manifest/silver_events.parque
   --output var/spark-attempt-1 --metrics var/spark-attempt-1.json --master 'local[2]'
 ```
 
-This job performs real Spark processing over a canonical Silver artifact and writes new serving projections. It does not independently implement the Python validation/reconciliation pipeline or publish an AWS catalog transaction. Local Spark and the configured EMR release differ; cloud acceptance must test that runtime.
+This job performs real Spark processing over a canonical Silver artifact and writes new serving projections. It does not independently implement the Python validation/reconciliation pipeline or publish an AWS catalog transaction. Local Spark 3.5.7 and EMR's Spark 3.5.6-amzn-1 were both exercised; business-column parity passed for the acceptance workload.
 
 ## Evidence, design and operations
 

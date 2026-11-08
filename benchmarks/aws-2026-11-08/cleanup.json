@@ -1,0 +1,47 @@
+{
+  "observed_at": "2026-11-08T16:38:03.527612+00:00",
+  "region": "eu-west-1",
+  "terraform_destroyed_resources": 54,
+  "independent_checks": {
+    "lambda": "absent",
+    "kinesis": "absent",
+    "firehose": "absent",
+    "emr": "terminated",
+    "workgroup": "absent",
+    "namespace": "absent",
+    "glue": "absent",
+    "lake_bucket": "absent",
+    "failed_batches_bucket": "absent",
+    "validator": "absent",
+    "emr-job": "absent",
+    "redshift": "absent",
+    "alarms": "absent",
+    "lambda_logs": "absent",
+    "emr_logs": "absent",
+    "firehose_logs": "absent",
+    "vpc": "absent",
+    "subnets": "absent",
+    "security_groups": "absent",
+    "endpoint": "absent",
+    "route_tables": "absent",
+    "event_source_mapping": "absent",
+    "redshift_audit_logs": "absent",
+    "iam_validator": "absent",
+    "iam_firehose": "absent",
+    "iam_emr-job": "absent",
+    "iam_redshift": "absent",
+    "producer_policy": "absent",
+    "managed_admin_secret": "absent"
+  },
+  "kms": {
+    "state": "PendingDeletion",
+    "deletion_date": "2026-12-08T16:34:17.279000+00:00"
+  },
+  "scope": "Only the isolated acceptance deployment; default account infrastructure is preserved.",
+  "service_linked_roles": {
+    "AWSServiceRoleForAmazonEMRServerless": "absent",
+    "AWSServiceRoleForRedshift": "absent"
+  },
+  "state": "pass",
+  "terraform_state_resources": 0
+}
