@@ -4,7 +4,12 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-from botocore.exceptions import ClientError, EndpointConnectionError
+
+exceptions = pytest.importorskip(
+    "botocore.exceptions", reason="Install the aws extra for SDK acceptance tests"
+)
+ClientError = exceptions.ClientError
+EndpointConnectionError = exceptions.EndpointConnectionError
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/aws_preflight.py"
 spec = importlib.util.spec_from_file_location("aws_preflight", SCRIPT)

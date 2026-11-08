@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 
 import pytest
-from botocore.exceptions import ClientError
+
+ClientError = pytest.importorskip(
+    "botocore.exceptions", reason="Install the aws extra for SDK acceptance tests"
+).ClientError
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/verify_lambda_aws.py"
 spec = importlib.util.spec_from_file_location("verify_lambda_aws", SCRIPT)
