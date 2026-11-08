@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import os
 import subprocess
@@ -22,9 +23,7 @@ def test_actual_spark_job_fractional_durations(tmp_path):
     delivered = next(e for e in events if e["event_type"] == "DELIVERED")
     delivered["event_timestamp"] = delivered["event_timestamp"].replace(".000000Z", ".500000Z")
     source.write_text("".join(json.dumps(e) + "\n" for e in events))
-    snapshot = run(
-        source, tmp_path / "lake", as_of=datetime(2026, 2, 1, tzinfo=UTC), products=False
-    )
+    snapshot = run(source, tmp_path / "lake", as_of=datetime(2026, 2, 1, tzinfo=UTC))
     root = Path(__file__).resolve().parents[1]
     output = tmp_path / "spark"
     command = [
@@ -56,3 +55,12 @@ def test_actual_spark_job_fractional_durations(tmp_path):
     assert all(r["dispatch_to_delivery_seconds"] >= 0 for r in shipments)
 
     assert any(row["dispatch_to_delivery_seconds"] % 1 == 0.5 for row in shipments)
+    spec = importlib.util.spec_from_file_location(
+        "verify_emr_aws", root / "scripts/verify_emr_aws.py"
+    )
+    assert spec and spec.loader
+    acceptance = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(acceptance)
+    counts = acceptance.compare(snapshot, output)
+    assert counts["fact_order_line"] == expected
+    assert counts["shipment_summary"] == len(shipments)

@@ -30,6 +30,14 @@ Cloud acceptance exposed a real configuration defect: the prefix-only failure-de
 
 The private Redshift acceptance fixture is in `infra/acceptance/`: three private subnets, no inbound security-group rules, no NAT/public IPs, and a bucket-scoped S3 gateway endpoint. Use a unique project prefix, the account guard and a reviewed plan. Its state must remain available until teardown and independent absence checks finish. This is supervised acceptance infrastructure, separate from the CI deployment workflow's persistent remote-state requirement.
 
+## EMR Serverless and Spark parity
+
+The actual `spark/curate.py` entry point ran on **EMR 7.12.0 / Spark 3.5.6-amzn-1**, reading the captured canonical Silver Parquet from KMS-encrypted S3 and writing three Parquet projections. All business-column values matched the independently computed local SQL products: 1,999 order lines, 1,099 shipment summaries and 62 facility-hour rows. The local Java/Spark integration test now runs the same comparison, including fractional-second durations and rolling windows.
+
+The driver reported **17.225 seconds** inside the Spark transformation. AWS reported 70 execution seconds; submission through terminal job state took 126.866 seconds. These have different measurement boundaries and must not be presented as interchangeable. Actual billed-resource units were 0.146 vCPU-hours and 0.328 GB-hours for the successful job; they are not a final dollar invoice. [EMR results](../benchmarks/aws-2026-11-08/emr.json).
+
+An [initial failed job](../benchmarks/aws-2026-11-08/emr-initial-failure.json) exposed missing `logs:DescribeLogGroups`. The runtime role now permits that read action only in the selected region; mutations remain scoped to the pre-created project log group. The retry passed without broadening raw/final-output deletion rights. This is cloud execution of projections over already reconciled Silver, not a distributed raw-to-Silver implementation or an S3/Glue release coordinator.
+
 ## Reproduction and cleanup
 
 Use browser-based `aws login` and temporary SDK credentials. No access key belongs in the repository. With Python AWS dependencies installed:

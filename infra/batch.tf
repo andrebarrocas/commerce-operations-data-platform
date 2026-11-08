@@ -36,7 +36,11 @@ resource "aws_iam_role_policy" "emr_job" {
         aws_glue_catalog_database.commerce.arn,
         "${local.arn_prefix}:glue:${var.aws_region}:${local.account_id}:table/${aws_glue_catalog_database.commerce.name}/*"
       ] },
-      { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"], Resource = [aws_cloudwatch_log_group.emr.arn, "${aws_cloudwatch_log_group.emr.arn}:log-stream:*"] }
+      { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"], Resource = [aws_cloudwatch_log_group.emr.arn, "${aws_cloudwatch_log_group.emr.arn}:log-stream:*"] },
+      # DescribeLogGroups has no resource-level IAM scope; restrict the read to
+      # this region. Mutating log permissions remain on the pre-created group.
+      { Effect = "Allow", Action = ["logs:DescribeLogGroups"], Resource = "*",
+      Condition = { StringEquals = { "aws:RequestedRegion" = var.aws_region } } }
     ]
   })
 }

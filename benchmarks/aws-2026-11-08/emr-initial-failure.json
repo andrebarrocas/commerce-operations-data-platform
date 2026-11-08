@@ -1,0 +1,20 @@
+{
+  "state": "fail",
+  "scope": "Execute the actual Spark entry point on EMR and compare all projection rows.\n\nUploads an already reconciled local Silver snapshot. Does not claim distributed\nraw validation or transactional S3/Glue product publication.",
+  "region": "eu-west-1",
+  "entrypoint_sha256": "49697dc27a38cb60c141d2d7aab9fc7d116e9a4f1e99be354cfcf594a249b90d",
+  "job_run_id": "00ga5br94kjqgo0r",
+  "job_state": "FAILED",
+  "job_details": {
+    "releaseLabel": "emr-7.12.0",
+    "totalExecutionDurationSeconds": 24,
+    "resourceUtilization": null,
+    "billedResourceUtilization": {
+      "vCPUHour": 0.067,
+      "memoryGBHour": 0.15,
+      "storageGBHour": 0.0
+    }
+  },
+  "error_type": "RuntimeError",
+  "failure_reason": "AccessDeniedException: missing logs:DescribeLogGroups"
+}

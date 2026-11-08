@@ -1,0 +1,37 @@
+{
+  "state": "pass",
+  "scope": "Execute the actual Spark entry point on EMR and compare all projection rows.\n\nUploads an already reconciled local Silver snapshot. Does not claim distributed\nraw validation or transactional S3/Glue product publication.",
+  "region": "eu-west-1",
+  "entrypoint_sha256": "49697dc27a38cb60c141d2d7aab9fc7d116e9a4f1e99be354cfcf594a249b90d",
+  "job_run_id": "00ga5btgd9f5dg0r",
+  "job_state": "SUCCESS",
+  "job_details": {
+    "releaseLabel": "emr-7.12.0",
+    "totalExecutionDurationSeconds": 70,
+    "resourceUtilization": null,
+    "billedResourceUtilization": {
+      "vCPUHour": 0.146,
+      "memoryGBHour": 0.328,
+      "storageGBHour": 0.0
+    },
+    "stateDetails": ""
+  },
+  "job_wall_seconds": 126.86598662499455,
+  "output_rows_equal_to_local_sql": {
+    "fact_order_line": 1999,
+    "shipment_summary": 1099,
+    "facility_hour": 62
+  },
+  "spark_metrics": {
+    "engine": "Apache Spark",
+    "spark_version": "3.5.6-amzn-1",
+    "input_records": 14307,
+    "output_rows": {
+      "fact_order_line": 1999,
+      "shipment_summary": 1099,
+      "facility_hour": 62
+    },
+    "runtime_seconds": 17.22472541799999,
+    "scope": "distributed projections of canonical Silver; excludes source validation and cloud publication"
+  }
+}
