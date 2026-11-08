@@ -15,8 +15,8 @@ resource "aws_iam_role_policy" "validator" {
   policy = jsonencode({
     Version = "2012-10-17", Statement = [
       { Effect = "Allow", Action = ["kinesis:DescribeStream", "kinesis:DescribeStreamSummary", "kinesis:GetShardIterator", "kinesis:GetRecords", "kinesis:ListShards"], Resource = aws_kinesis_stream.events.arn },
-      { Effect = "Allow", Action = ["s3:PutObject"], Resource = ["${aws_s3_bucket.lake.arn}/quarantine/stream/*", "${aws_s3_bucket.lake.arn}/aws/lambda/*"], Condition = { StringEquals = { "s3:ResourceAccount" = local.account_id } } },
-      { Effect = "Allow", Action = ["s3:ListBucket"], Resource = aws_s3_bucket.lake.arn, Condition = { StringEquals = { "s3:ResourceAccount" = local.account_id } } },
+      { Effect = "Allow", Action = ["s3:PutObject"], Resource = ["${aws_s3_bucket.lake.arn}/quarantine/stream/*", "${aws_s3_bucket.failed_batches.arn}/*"], Condition = { StringEquals = { "s3:ResourceAccount" = local.account_id } } },
+      { Effect = "Allow", Action = ["s3:ListBucket"], Resource = aws_s3_bucket.failed_batches.arn, Condition = { StringEquals = { "s3:ResourceAccount" = local.account_id } } },
       { Effect = "Allow", Action = ["kms:Decrypt", "kms:GenerateDataKey"], Resource = aws_kms_key.platform.arn },
       { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents"], Resource = "${aws_cloudwatch_log_group.validator.arn}:log-stream:*" }
     ]
@@ -32,7 +32,7 @@ resource "aws_lambda_function" "validator" {
   architectures                  = ["x86_64"]
   memory_size                    = 256
   timeout                        = 30
-  reserved_concurrent_executions = 2
+  reserved_concurrent_executions = var.validator_reserved_concurrency
   environment {
     variables = {
       LAKE_BUCKET = aws_s3_bucket.lake.id
@@ -53,7 +53,7 @@ resource "aws_lambda_event_source_mapping" "validator" {
   function_response_types            = ["ReportBatchItemFailures"]
   parallelization_factor             = 1
   destination_config {
-    on_failure { destination_arn = aws_s3_bucket.lake.arn }
+    on_failure { destination_arn = aws_s3_bucket.failed_batches.arn }
   }
-  depends_on = [aws_iam_role_policy.validator, aws_s3_bucket_server_side_encryption_configuration.lake]
+  depends_on = [aws_iam_role_policy.validator, aws_s3_bucket_server_side_encryption_configuration.failed_batches]
 }

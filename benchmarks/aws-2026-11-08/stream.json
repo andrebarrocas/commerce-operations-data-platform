@@ -1,0 +1,51 @@
+{
+  "state": "pass",
+  "region": "eu-west-1",
+  "orders": 1000,
+  "scope": "Paid, opt-in Kinesis/Firehose/Lambda acceptance with a supervised local bridge.\n\nConsumes a fresh isolated test deployment. Does not create or delete resources.\nRaw-to-Silver reconciliation runs locally; this is not distributed orchestration.",
+  "checks": {
+    "complete_raw_delivery_and_duplicate_preservation": "pass",
+    "actual_stream_validator_quarantine": "pass",
+    "captured_raw_local_reconciliation_and_replay": "pass"
+  },
+  "expected_unique_events": 14307,
+  "producer": {
+    "records_acknowledged": 14317,
+    "request_attempts": 29,
+    "record_retries": 0
+  },
+  "producer_ack_seconds": 41.67490899999393,
+  "delivery_wait_seconds_from_send_start": 157.98976999998558,
+  "raw_objects": 3,
+  "raw_records": 14321,
+  "quarantined_unique": 4,
+  "local_bridge_metrics": {
+    "records_processed": 14321,
+    "records_rejected": 4,
+    "accepted_unique": 14307,
+    "effective_records": 14307,
+    "duplicate_records": 10,
+    "pending_records": 0,
+    "overdue_pending_records": 0,
+    "late_records": 14307,
+    "processing_seconds": 11.696534749993589,
+    "quality_seconds": 1.946701708016917,
+    "quality_state": "pass",
+    "freshness_state": "not_evaluated_fixture_clock",
+    "retries": 0,
+    "failures": 0,
+    "records_per_second": 1224.3797249444199,
+    "unique_events_per_second": 1223.1827892451515,
+    "bytes_read": 19151260,
+    "bytes_written": 2584727,
+    "source_completeness": {
+      "state": "pass",
+      "ratio": 1.0,
+      "expected": 14307,
+      "missing": 0
+    },
+    "latency_clock": "S3 object LastModified availability upper bound; synthetic business time; local monotonic processing duration"
+  },
+  "snapshot_logical_hash": "17aa4b4a1d8e1bc1e03e534c7fa116550ff0e93159c1aa3cfc6b3b139223b7c3",
+  "elapsed_seconds": 169.83128650000435
+}

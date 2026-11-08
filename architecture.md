@@ -21,6 +21,8 @@ Python, DuckDB and PyArrow make the core runnable without AWS or Java. PySpark r
 
 ## AWS deployment architecture
 
+The supervised 2026-11-08 deployment has exercised Kinesis, Firehose, Lambda and S3 with real synthetic records, duplicates, quarantine, denied writes and retry exhaustion. Failed invocations have a separate encrypted bucket so their bucket-wide destination permission cannot write authoritative lake prefixes. See [executed cloud evidence](docs/aws-verification.md); unattended distributed raw-to-Silver processing and transactional S3/Glue publication remain separate implementation gates.
+
 ```mermaid
 flowchart LR
   P[Synthetic Python producer] --> K[Kinesis Data Streams]

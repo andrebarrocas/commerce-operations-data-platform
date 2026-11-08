@@ -1,0 +1,13 @@
+{
+  "state": "pass",
+  "scope": "Force a real quarantine-write denial, retain the failed batch, restore and replay.\n\nTemporary Deny is scoped to the selected test validator and quarantine prefix.\nThe original bucket policy is restored in finally. Requires supervised teardown\nif the process or host dies while the failure policy is installed.",
+  "checks": {
+    "denied_quarantine_retries_retained_full_batch": "pass",
+    "original_policy_restored": "pass",
+    "replayed_record_durably_quarantined": "pass"
+  },
+  "region": "eu-west-1",
+  "failed_batch_condition": "RetryAttemptsExhausted",
+  "failure_detection_and_retention_seconds": 26.969162833003793,
+  "recovery_seconds_after_replay": 9.025219584000297
+}

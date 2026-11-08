@@ -18,6 +18,18 @@ The function, scoped IAM role/policy, two versioned private buckets and log grou
 
 `scripts/aws_preflight.py` verifies the exact selected account before read-only service probes, suppresses private inventories in its output, and exits 2 if a service is blocked. The initial Free-plan account returned `SubscriptionRequiredException` for Kinesis, Firehose, EMR Serverless and Redshift. After the account owner upgraded the plan, all six probes succeeded. Both actual reports are retained under [the evidence directory](../benchmarks/aws-2026-11-08/). A successful probe is not deployment acceptance.
 
+## Kinesis, Firehose and stream failure recovery
+
+The isolated OpenTofu deployment sent 1,000 synthetic orders: **14,307 unique events, 10 deliberate duplicate attempts and four malformed payloads**. All 14,321 attempts arrived in three GZIP raw objects. The actual Kinesis Lambda consumer quarantined all four malformed records. The manually supervised capture bridge then reconciled the raw objects locally: complete expected population, zero pending events, ten duplicates, four rejects and an identical logical hash on exact replay. [Streaming results](../benchmarks/aws-2026-11-08/stream.json).
+
+Preparing/sending/acknowledging the normal and duplicate workload took 41.675 seconds. All raw and quarantine controls reconciled 157.990 seconds after the experiment began. This includes producer work, Firehose buffering, polling and Lambda consumption; it is **not** per-event Kinesis latency or a throughput capacity benchmark. Local reconciliation took 11.697 seconds, including 1.947 seconds of quality checks. Historical business timestamps are synthetic; batch availability comes from actual S3 `LastModified`, not a reconstructed Kinesis receipt clock.
+
+The live failure drill added a temporary explicit Deny on only the validator's quarantine writes. Lambda exhausted its three configured retries and retained the full failed batch in the separate S3 destination (`RetryAttemptsExhausted`) in 26.969 seconds. After restoring the exact original bucket policy, replaying the same record durably quarantined it in 9.025 seconds. [Failure/recovery results](../benchmarks/aws-2026-11-08/stream-recovery.json). Offline tests prove the original policy is restored when the producer fails during the drill; a host loss still requires operator recovery.
+
+Cloud acceptance exposed a real configuration defect: the prefix-only failure-destination grant was rejected during event-source mapping creation. A dedicated encrypted private failure bucket now contains the bucket-wide write grant; the validator still cannot write raw/Silver/Gold lake prefixes. See [ADR 0008](adr/0008-isolated-failed-batch-destination.md). The test fixture also leaves Lambda concurrency unreserved because this new account initially had only ten total executions. The reusable module retains its default reservation of two.
+
+The private Redshift acceptance fixture is in `infra/acceptance/`: three private subnets, no inbound security-group rules, no NAT/public IPs, and a bucket-scoped S3 gateway endpoint. Use a unique project prefix, the account guard and a reviewed plan. Its state must remain available until teardown and independent absence checks finish. This is supervised acceptance infrastructure, separate from the CI deployment workflow's persistent remote-state requirement.
+
 ## Reproduction and cleanup
 
 Use browser-based `aws login` and temporary SDK credentials. No access key belongs in the repository. With Python AWS dependencies installed:

@@ -51,3 +51,6 @@ jobs:
       - run: tofu -chdir=infra fmt -check
       - run: tofu -chdir=infra init -backend=false
       - run: tofu -chdir=infra validate
+      - run: tofu -chdir=infra/acceptance fmt -check
+      - run: tofu -chdir=infra/acceptance init -backend=false
+      - run: tofu -chdir=infra/acceptance validate

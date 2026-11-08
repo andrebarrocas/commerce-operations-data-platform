@@ -1,4 +1,5 @@
 output "lake_bucket" { value = aws_s3_bucket.lake.id }
+output "failed_batches_bucket" { value = aws_s3_bucket.failed_batches.id }
 output "stream_name" { value = aws_kinesis_stream.events.name }
 output "producer_policy_arn" { value = aws_iam_policy.producer.arn }
 output "glue_database" { value = aws_glue_catalog_database.commerce.name }

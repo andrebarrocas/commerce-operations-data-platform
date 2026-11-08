@@ -44,6 +44,15 @@ variable "enable_redshift" {
   type    = bool
   default = false
 }
+variable "validator_reserved_concurrency" {
+  type        = number
+  default     = 2
+  description = "Use -1 to leave concurrency unreserved in low-quota sandbox accounts; 0 would disable validation."
+  validation {
+    condition     = var.validator_reserved_concurrency == -1 || var.validator_reserved_concurrency >= 1
+    error_message = "Use -1 for unreserved concurrency or a positive reservation."
+  }
+}
 variable "redshift_subnet_ids" {
   type        = list(string)
   default     = []
