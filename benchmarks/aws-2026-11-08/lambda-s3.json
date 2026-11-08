@@ -1,0 +1,32 @@
+{
+  "state": "pass",
+  "observed_at": "2026-11-08T16:06:36.841106+00:00",
+  "region": "eu-west-1",
+  "account_verified": true,
+  "scope": "Opt-in real Lambda/S3 package acceptance with isolated resources and cleanup.\n\nDirect invocations use synthetic Kinesis-shaped envelopes. This does NOT test\nKinesis delivery, event-source mapping retries, Firehose, EMR or Redshift.",
+  "package_sha256": "057f08849328a8c0ccd7c95bd457cac7bcfd14e946113a0dacab2d9d1c59c28d",
+  "checks": {
+    "valid_record_no_quarantine": "pass",
+    "malformed_bytes_retained": "pass",
+    "repeat_invocation_stable_quarantine_key": "pass",
+    "unauthorized_bucket_not_acknowledged": "pass",
+    "quarantine_recovery": "pass"
+  },
+  "cleanup": {
+    "function": "deleted",
+    "role_policy": "deleted",
+    "role": "deleted",
+    "lake_bucket": "deleted",
+    "denied_bucket": "deleted",
+    "logs": "deleted"
+  },
+  "recovery_seconds": 13.912350041995523,
+  "elapsed_seconds_including_cleanup": 59.98419995899894,
+  "independent_absence_checks": {
+    "function": "absent",
+    "role": "absent",
+    "logs": "absent",
+    "bucket_0": "absent",
+    "bucket_1": "absent"
+  }
+}

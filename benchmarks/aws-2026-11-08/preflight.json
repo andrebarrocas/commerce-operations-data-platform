@@ -1,0 +1,38 @@
+{
+  "observed_at": "2026-11-08T16:06:40.206868+00:00",
+  "region": "eu-west-1",
+  "account_verified": true,
+  "scope": "Read-only service access probes; not deployment acceptance",
+  "state": "blocked",
+  "services": {
+    "s3": {
+      "state": "accessible",
+      "operation": "list_buckets"
+    },
+    "lambda": {
+      "state": "accessible",
+      "operation": "get_account_settings"
+    },
+    "kinesis": {
+      "state": "blocked",
+      "operation": "list_streams",
+      "error_code": "SubscriptionRequiredException"
+    },
+    "firehose": {
+      "state": "blocked",
+      "operation": "list_delivery_streams",
+      "error_code": "SubscriptionRequiredException"
+    },
+    "emr-serverless": {
+      "state": "blocked",
+      "operation": "list_applications",
+      "error_code": "SubscriptionRequiredException"
+    },
+    "redshift-serverless": {
+      "state": "blocked",
+      "operation": "list_workgroups",
+      "error_code": "SubscriptionRequiredException"
+    }
+  },
+  "resources_created": 0
+}

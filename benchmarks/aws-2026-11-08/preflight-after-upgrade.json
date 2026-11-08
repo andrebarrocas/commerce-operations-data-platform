@@ -1,0 +1,34 @@
+{
+  "observed_at": "2026-11-08T16:10:06.141579+00:00",
+  "region": "eu-west-1",
+  "account_verified": true,
+  "scope": "Read-only service access probes; not deployment acceptance",
+  "state": "pass",
+  "services": {
+    "s3": {
+      "state": "accessible",
+      "operation": "list_buckets"
+    },
+    "lambda": {
+      "state": "accessible",
+      "operation": "get_account_settings"
+    },
+    "kinesis": {
+      "state": "accessible",
+      "operation": "list_streams"
+    },
+    "firehose": {
+      "state": "accessible",
+      "operation": "list_delivery_streams"
+    },
+    "emr-serverless": {
+      "state": "accessible",
+      "operation": "list_applications"
+    },
+    "redshift-serverless": {
+      "state": "accessible",
+      "operation": "list_workgroups"
+    }
+  },
+  "resources_created": 0
+}

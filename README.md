@@ -4,7 +4,7 @@ This platform reconstructs the history of orders, inventory reservations, packag
 
 Independent data engineering portfolio for fictional **Meridian Commerce**. All records, business rules, schemas and designs are synthetic. There is no employer affiliation, production usage, proprietary architecture or claimed performance improvement.
 
-The working local platform turns versioned commerce events into immutable Parquet snapshots, six reusable data products, dimensional models and point-in-time feature datasets. It preserves malformed inputs, reconciles late history, detects identity conflicts, applies explicit corrections, and publishes through a single atomic manifest. AWS adapters, infrastructure and warehouse experiments are included; **AWS deployment and Redshift measurements have not been performed**.
+The working local platform turns versioned commerce events into immutable Parquet snapshots, six reusable data products, dimensional models and point-in-time feature datasets. It preserves malformed inputs, reconciles late history, detects identity conflicts, applies explicit corrections, and publishes through a single atomic manifest. The packaged validator has also passed real AWS Lambda/S3 acceptance, including denied writes and recovery; see [cloud verification](docs/aws-verification.md). Full platform acceptance and warehouse measurements are tracked separately from local results.
 
 ## Run locally
 
